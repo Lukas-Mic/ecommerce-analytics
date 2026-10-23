@@ -1,0 +1,231 @@
+		/// Wartość zamówień po rabatach, bez anulowanych (brutto z VAT, jak w sklepie).
+		measure 'Przychód netto' = SUM ( fct_orders[net_revenue] )
+			formatString: #,0 zł
+			displayFolder: Sprzedaż
+
+		/// Przychód netto pomniejszony o zwroty (zwroty przypisane do daty zamówienia).
+		measure 'Przychód po zwrotach' = SUM ( fct_orders[net_revenue_after_returns] )
+			formatString: #,0 zł
+			displayFolder: Sprzedaż
+
+		/// Przychód po zwrotach minus koszt sprzedanego towaru.
+		measure 'Marża brutto' = SUM ( fct_orders[gross_margin] )
+			formatString: #,0 zł
+			displayFolder: Sprzedaż
+
+		/// Marża brutto jako odsetek przychodu po zwrotach.
+		measure 'Marża brutto %' = DIVIDE ( [Marża brutto], [Przychód po zwrotach] )
+			formatString: 0.0%
+			displayFolder: Sprzedaż
+
+		/// Liczba zamówień bez anulowanych.
+		measure 'Zamówienia' = CALCULATE ( COUNTROWS ( fct_orders ), fct_orders[is_cancelled] = FALSE () )
+			formatString: #,0
+			displayFolder: Sprzedaż
+
+		/// Liczba anulowanych zamówień.
+		measure 'Anulowane zamówienia' = CALCULATE ( COUNTROWS ( fct_orders ), fct_orders[is_cancelled] = TRUE () )
+			formatString: #,0
+			displayFolder: Sprzedaż
+
+		/// Odsetek zamówień anulowanych.
+		measure 'Wskaźnik anulowań' = DIVIDE ( [Anulowane zamówienia], [Zamówienia] + [Anulowane zamówienia] )
+			formatString: 0.0%
+			displayFolder: Sprzedaż
+
+		/// AOV: przychód netto na zamówienie.
+		measure 'Średnia wartość zamówienia' = DIVIDE ( [Przychód netto], [Zamówienia] )
+			formatString: #,0.00 zł
+			displayFolder: Sprzedaż
+
+		/// Liczba sprzedanych sztuk (bez anulowanych).
+		measure 'Sprzedane sztuki' = CALCULATE ( SUM ( fct_order_items[quantity] ), fct_order_items[is_cancelled] = FALSE () )
+			formatString: #,0
+			displayFolder: Sprzedaż
+
+		/// Wartość udzielonych rabatów (bez anulowanych).
+		measure 'Rabaty' = CALCULATE ( SUM ( fct_orders[discount_amount] ), fct_orders[is_cancelled] = FALSE () )
+			formatString: #,0 zł
+			displayFolder: Sprzedaż
+
+		/// Rabaty jako odsetek wartości przed rabatem.
+		measure 'Udział rabatów' = DIVIDE ( [Rabaty], [Przychód netto] + [Rabaty] )
+			formatString: 0.0%
+			displayFolder: Sprzedaż
+
+		/// Klienci z co najmniej jednym nieanulowanym zamówieniem w okresie.
+		measure 'Aktywni klienci' = CALCULATE ( DISTINCTCOUNT ( fct_orders[customer_id] ), fct_orders[is_cancelled] = FALSE () )
+			formatString: #,0
+			displayFolder: Klienci
+
+		/// Pierwsze zamówienia klientów zarejestrowanych w okresie danych (klienci sprzed X.2024 nie są liczeni jako nowi).
+		measure 'Nowi klienci' =
+				CALCULATE (
+					COUNTROWS ( fct_orders ),
+					fct_orders[is_first_order] = TRUE (),
+					dim_customers[is_new_in_period] = TRUE ()
+				)
+			formatString: #,0
+			displayFolder: Klienci
+
+		/// Aktywni klienci, którzy nie są nowi w danym okresie.
+		measure 'Powracający klienci' = [Aktywni klienci] - [Nowi klienci]
+			formatString: #,0
+			displayFolder: Klienci
+
+		/// Odsetek aktywnych klientów, którzy kupili ponownie.
+		measure 'Udział powracających' = DIVIDE ( [Powracający klienci], [Aktywni klienci] )
+			formatString: 0.0%
+			displayFolder: Klienci
+
+		/// Średnia liczba zamówień na aktywnego klienta.
+		measure 'Zamówienia na klienta' = DIVIDE ( [Zamówienia], [Aktywni klienci] )
+			formatString: 0.00
+			displayFolder: Klienci
+
+		/// Przychód po zwrotach na aktywnego klienta.
+		measure 'Przychód na klienta' = DIVIDE ( [Przychód po zwrotach], [Aktywni klienci] )
+			formatString: #,0 zł
+			displayFolder: Klienci
+
+		/// Wartość zwrotów według daty zwrotu.
+		measure 'Kwota zwrotów' = SUM ( fct_returns[refund_amount] )
+			formatString: #,0 zł
+			displayFolder: Zwroty
+
+		/// Liczba zwróconych sztuk według daty zwrotu.
+		measure 'Zwrócone sztuki' = SUM ( fct_returns[returned_quantity] )
+			formatString: #,0
+			displayFolder: Zwroty
+
+		/// Zwroty jako odsetek przychodu netto, według daty zamówienia.
+		measure 'Wskaźnik zwrotów (wartość)' =
+				DIVIDE (
+					CALCULATE ( SUM ( fct_orders[refund_amount] ), fct_orders[is_cancelled] = FALSE () ),
+					[Przychód netto]
+				)
+			formatString: 0.0%
+			displayFolder: Zwroty
+
+		/// Odsetek sprzedanych sztuk, które wróciły; działa w podziale na kategorie i produkty.
+		measure 'Wskaźnik zwrotów (sztuki)' =
+				DIVIDE (
+					CALCULATE ( SUM ( fct_order_items[returned_quantity] ), fct_order_items[is_cancelled] = FALSE () ),
+					[Sprzedane sztuki]
+				)
+			formatString: 0.0%
+			displayFolder: Zwroty
+
+		/// Średnia liczba dni od zamówienia do zwrotu.
+		measure 'Średni czas do zwrotu (dni)' = AVERAGE ( fct_returns[days_to_return] )
+			formatString: 0.0
+			displayFolder: Zwroty
+
+		/// Koszt kampanii z paneli reklamowych i afiliacji.
+		measure 'Koszt marketingu' = SUM ( fct_marketing_daily[spend] )
+			formatString: #,0 zł
+			displayFolder: Marketing
+
+		/// Przychód przypisany kampaniom (atrybucja last-click).
+		measure 'Przychód z kampanii' = SUM ( fct_marketing_daily[revenue] )
+			formatString: #,0 zł
+			displayFolder: Marketing
+
+		/// Zwrot z wydatków reklamowych: przychód z kampanii na 1 zł kosztu.
+		measure 'ROAS' = DIVIDE ( [Przychód z kampanii], [Koszt marketingu] )
+			formatString: 0.00
+			displayFolder: Marketing
+
+		/// Marketing Efficiency Ratio: cały przychód netto na 1 zł kosztu marketingu.
+		measure 'MER' = DIVIDE ( [Przychód netto], [Koszt marketingu] )
+			formatString: 0.00
+			displayFolder: Marketing
+
+		/// Koszt pozyskania nowego klienta (blended).
+		measure 'CAC' = DIVIDE ( [Koszt marketingu], [Nowi klienci] )
+			formatString: #,0.00 zł
+			displayFolder: Marketing
+
+		/// Kliknięcia na wyświetlenie.
+		measure 'CTR' = DIVIDE ( SUM ( fct_marketing_daily[clicks] ), SUM ( fct_marketing_daily[impressions] ) )
+			formatString: 0.00%
+			displayFolder: Marketing
+
+		/// Koszt kliknięcia.
+		measure 'CPC' = DIVIDE ( [Koszt marketingu], SUM ( fct_marketing_daily[clicks] ) )
+			formatString: #,0.00 zł
+			displayFolder: Marketing
+
+		/// Marża brutto pomniejszona o koszt marketingu.
+		measure 'Marża po marketingu' = [Marża brutto] - [Koszt marketingu]
+			formatString: #,0 zł
+			displayFolder: Marketing
+
+		/// Dni kampanii płatnych bez kosztów w eksporcie (luka w danych źródłowych).
+		measure 'Dni bez danych kosztowych' = CALCULATE ( COUNTROWS ( fct_marketing_daily ), fct_marketing_daily[is_spend_missing] = TRUE () )
+			formatString: #,0
+			displayFolder: Marketing
+
+		/// Przychód netto w analogicznym okresie poprzedniego roku.
+		measure 'Przychód netto rok wcześniej' = CALCULATE ( [Przychód netto], SAMEPERIODLASTYEAR ( dim_date[date_day] ) )
+			formatString: #,0 zł
+			displayFolder: Analiza czasowa
+
+		/// Zmiana przychodu netto rok do roku.
+		measure 'Dynamika r/r' =
+				VAR _py = [Przychód netto rok wcześniej]
+				RETURN
+					IF ( NOT ISBLANK ( [Przychód netto] ), DIVIDE ( [Przychód netto] - _py, _py ) )
+			formatString: +0.0%;-0.0%;0.0%
+			displayFolder: Analiza czasowa
+
+		/// Przychód netto w poprzednim miesiącu.
+		measure 'Przychód netto miesiąc wcześniej' = CALCULATE ( [Przychód netto], DATEADD ( dim_date[date_day], -1, MONTH ) )
+			formatString: #,0 zł
+			displayFolder: Analiza czasowa
+
+		/// Zmiana przychodu netto miesiąc do miesiąca.
+		measure 'Dynamika m/m' =
+				VAR _pm = [Przychód netto miesiąc wcześniej]
+				RETURN
+					IF ( NOT ISBLANK ( [Przychód netto] ), DIVIDE ( [Przychód netto] - _pm, _pm ) )
+			formatString: +0.0%;-0.0%;0.0%
+			displayFolder: Analiza czasowa
+
+		/// Przychód narastająco od początku roku.
+		measure 'Przychód netto YTD' = TOTALYTD ( [Przychód netto], dim_date[date_day] )
+			formatString: #,0 zł
+			displayFolder: Analiza czasowa
+
+		/// Średnia krocząca z 7 dni; wygładza wykres dzienny.
+		measure 'Przychód netto (średnia 7 dni)' =
+				VAR _dzien = MAX ( dim_date[date_day] )
+				RETURN
+					IF (
+						NOT ISBLANK ( [Przychód netto] ),
+						AVERAGEX ( DATESINPERIOD ( dim_date[date_day], _dzien, -7, DAY ), [Przychód netto] )
+					)
+			formatString: #,0 zł
+			displayFolder: Analiza czasowa
+
+		/// O ile odchyleń standardowych dzienna liczba zamówień odbiega od poprzednich 28 dni.
+		measure 'Zamówienia: odchylenie (z-score)' =
+				VAR _dzien = MAX ( dim_date[date_day] )
+				VAR _okno = DATESINPERIOD ( dim_date[date_day], _dzien - 1, -28, DAY )
+				VAR _srednia = AVERAGEX ( _okno, [Zamówienia] )
+				VAR _odchylenie = STDEVX.P ( _okno, [Zamówienia] )
+				RETURN
+					IF (
+						HASONEVALUE ( dim_date[date_day] ) && NOT ISBLANK ( [Zamówienia] ),
+						DIVIDE ( [Zamówienia] - _srednia, _odchylenie )
+					)
+			formatString: +0.0;-0.0;0.0
+			displayFolder: Anomalie
+
+		/// Dni, w których liczba zamówień odbiega o co najmniej 3 odchylenia standardowe (np. Black Friday, awaria płatności).
+		measure 'Anomalia zamówień' =
+				VAR _z = [Zamówienia: odchylenie (z-score)]
+				RETURN
+					IF ( ABS ( _z ) >= 3, [Zamówienia] )
+			formatString: #,0
+			displayFolder: Anomalie
