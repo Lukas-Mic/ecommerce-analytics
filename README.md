@@ -1,5 +1,7 @@
 # E-commerce Analytics Stack
 
+[![dbt CI](https://github.com/Lukas-Mic/ecommerce-analytics/actions/workflows/dbt-ci.yml/badge.svg)](https://github.com/Lukas-Mic/ecommerce-analytics/actions/workflows/dbt-ci.yml)
+
 Kompletny, działający na jednym VPS-ie stos analityczny dla fikcyjnego polskiego sklepu
 internetowego: od surowych danych, przez hurtownię i testy jakości, po dashboardy
 w Power BI, Looker Studio i Metabase.
@@ -28,6 +30,7 @@ flowchart LR
 | Źródła | Python (numpy, pandas) | Realistyczne dane z sezonowością, kampaniami i celowymi błędami |
 | Hurtownia | PostgreSQL 16 (Docker) | Schematy `raw → staging → intermediate → marts` |
 | Transformacje | dbt | 20 modeli, 58 testów, dokumentacja i graf zależności |
+| CI | GitHub Actions | pełny `dbt build` na świeżym Postgresie przy każdej zmianie |
 | BI | Power BI, Looker Studio, Metabase | Dashboardy na tej samej warstwie `marts` |
 | Bezpieczeństwo | role Postgres, tunel SSH, Caddy (HTTPS) | Narzędzia BI widzą tylko `marts`, wyłącznie do odczytu |
 
@@ -143,7 +146,8 @@ zostało udokumentowane jako ostrzeżenie zamiast ukryte.
 - [ ] Raport w Excelu odświeżany przez Power Query
 - [ ] Asystent AI: pytania po polsku → SQL → wykres (z podglądem zapytania)
 - [ ] Automatyczny tygodniowy komentarz do wyników i wykrywanie anomalii
-- [ ] Harmonogram odświeżania (cron) i CI z `dbt build` w GitHub Actions
+- [x] CI z `dbt build` w GitHub Actions
+- [ ] Harmonogram odświeżania (cron)
 - [ ] Strona portfolio z opisem projektu
 
 ## Struktura repozytorium
@@ -160,6 +164,8 @@ zostało udokumentowane jako ostrzeżenie zamiast ukryte.
 │   ├── seeds/pl_holidays.csv    # polskie święta 2024-2026
 │   ├── tests/                   # testy rekoncyliacyjne
 │   └── macros/
+├── .github/workflows/dbt-ci.yml # CI: dbt build przy każdej zmianie
+├── scripts/setup_vps.sh         # konfiguracja świeżego VPS
 ├── tools/Dockerfile             # obraz z dbt i generatorem
 ├── caddy/Caddyfile              # HTTPS dla Metabase (opcjonalnie)
 ├── docker-compose.yml
