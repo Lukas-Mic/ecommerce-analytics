@@ -1,0 +1,102 @@
+version: 2
+
+models:
+  - name: stg_customers
+    description: Konta klientów po czyszczeniu; master_customer_id scala duplikaty po e-mailu.
+    columns:
+      - name: customer_id
+        data_tests: [unique, not_null]
+      - name: master_customer_id
+        description: Najwcześniej założone konto z tym samym (znormalizowanym) e-mailem.
+        data_tests: [not_null]
+      - name: account_rank
+        description: 1 = konto główne, >1 = duplikat.
+      - name: is_test_account
+        description: Konto testowe zespołu QA (domena test.*), wykluczane z marts.
+
+  - name: stg_products
+    columns:
+      - name: product_id
+        data_tests: [unique, not_null]
+      - name: category
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments:
+                values: ['Elektronika', 'Dom i ogród', 'Moda', 'Sport', 'Uroda', 'Dziecko', 'Zoo']
+
+  - name: stg_campaigns
+    columns:
+      - name: campaign_id
+        data_tests: [unique, not_null]
+      - name: channel
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['google_ads', 'meta_ads', 'tiktok_ads', 'newsletter', 'affiliate']
+
+  - name: stg_orders
+    description: Zamówienia bez duplikatów ETL, z czasem lokalnym (Europe/Warsaw).
+    columns:
+      - name: order_id
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_customers')
+                field: customer_id
+      - name: order_status
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['delivered', 'returned', 'cancelled', 'shipped', 'processing']
+      - name: sales_channel
+        data_tests:
+          - accepted_values:
+              arguments:
+                values: ['web', 'app', 'marketplace']
+
+  - name: stg_order_items
+    columns:
+      - name: order_item_id
+        data_tests: [unique, not_null]
+      - name: order_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_orders')
+                field: order_id
+      - name: product_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_products')
+                field: product_id
+
+  - name: stg_returns
+    columns:
+      - name: return_id
+        data_tests: [unique, not_null]
+      - name: order_item_id
+        description: >
+          Kilka zwrotów wskazuje na pozycje odrzucone w stagingu (ilość 0) - test ostrzega,
+          a fct_returns je pomija (szczegóły w dq_data_quality_checks).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_order_items')
+                field: order_item_id
+              config:
+                severity: warn
+
+  - name: stg_marketing_spend
+    columns:
+      - name: campaign_id
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('stg_campaigns')
+                field: campaign_id

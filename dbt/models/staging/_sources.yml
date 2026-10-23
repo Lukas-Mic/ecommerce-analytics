@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: raw
+    schema: raw
+    description: >
+      Landing zone: pliki CSV z systemu sklepu, panelu reklamowego i magazynu załadowane 1:1.
+      Wszystkie kolumny są tekstem, dane zawierają znane problemy jakościowe
+      (opisane w modelu dq_data_quality_checks).
+    tables:
+      - name: customers
+        description: Konta klientów (zawiera duplikaty kont i konta testowe QA).
+      - name: products
+        description: Katalog produktów.
+      - name: campaigns
+        description: Kampanie marketingowe z budżetem dziennym i rabatem.
+      - name: orders
+        description: Nagłówki zamówień, znacznik czasu w UTC (zawiera zdublowane wiersze z ETL).
+      - name: order_items
+        description: Pozycje zamówień (część cen z przecinkiem dziesiętnym, pojedyncze ilości 0).
+      - name: returns
+        description: Zwroty na poziomie pozycji zamówienia.
+      - name: marketing_spend
+        description: Dzienne koszty, wyświetlenia i kliknięcia kampanii (luka w danych Meta 1-5.07.2025).

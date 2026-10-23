@@ -1,0 +1,96 @@
+name: ecommerce-analytics
+
+services:
+  # Hurtownia danych
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-warehouse}
+      POSTGRES_USER: ${POSTGRES_USER:-dwh_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Ustaw POSTGRES_PASSWORD w pliku .env}
+      BI_READER_PASSWORD: ${BI_READER_PASSWORD:?Ustaw BI_READER_PASSWORD w pliku .env}
+      METABASE_DB_PASSWORD: ${METABASE_DB_PASSWORD:?Ustaw METABASE_DB_PASSWORD w pliku .env}
+    command:
+      - postgres
+      - -c
+      - shared_buffers=256MB
+      - -c
+      - work_mem=16MB
+      - -c
+      - max_connections=40
+    ports:
+      # Domyślnie tylko localhost: z zewnątrz łączysz się tunelem SSH (patrz README)
+      - "${POSTGRES_BIND:-127.0.0.1}:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./warehouse/init:/docker-entrypoint-initdb.d:ro
+      - ./warehouse:/warehouse:ro
+      - ./data:/data:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    mem_limit: 1g
+
+  # Self-service BI dostępne z przeglądarki
+  metabase:
+    image: metabase/metabase:${METABASE_VERSION:-latest}
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      MB_DB_TYPE: postgres
+      MB_DB_HOST: postgres
+      MB_DB_PORT: 5432
+      MB_DB_DBNAME: metabase
+      MB_DB_USER: metabase
+      MB_DB_PASS: ${METABASE_DB_PASSWORD}
+      MB_SITE_LOCALE: pl
+      MB_ANON_TRACKING_ENABLED: "false"
+      JAVA_OPTS: "-Xmx1g"
+    ports:
+      - "127.0.0.1:3000:3000"
+    mem_limit: 1536m
+
+  # Narzędzia uruchamiane na żądanie: generator danych + dbt
+  tools:
+    build: ./tools
+    profiles: ["tools"]
+    working_dir: /project
+    volumes:
+      - .:/project
+    environment:
+      DBT_PROFILES_DIR: /project/dbt
+      DBT_HOST: postgres
+      DBT_PORT: 5432
+      DBT_USER: ${POSTGRES_USER:-dwh_admin}
+      DBT_PASSWORD: ${POSTGRES_PASSWORD}
+      DBT_DBNAME: ${POSTGRES_DB:-warehouse}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  # Opcjonalnie: publiczny dostęp do Metabase przez HTTPS (docker compose --profile public up -d)
+  caddy:
+    image: caddy:2-alpine
+    profiles: ["public"]
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?Ustaw DOMAIN w pliku .env}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - metabase
+
+volumes:
+  pgdata:
+  caddy_data:
+  caddy_config:

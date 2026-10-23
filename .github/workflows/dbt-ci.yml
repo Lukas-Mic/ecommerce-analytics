@@ -1,0 +1,80 @@
+name: dbt CI
+
+# Przy każdej zmianie: świeży Postgres, wygenerowane dane, pełny dbt build z testami.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  dbt-build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: warehouse
+          POSTGRES_USER: dwh_admin
+          POSTGRES_PASSWORD: ci-password
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U dwh_admin -d warehouse"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: dwh_admin
+      PGPASSWORD: ci-password
+      PGDATABASE: warehouse
+      POSTGRES_USER: dwh_admin
+      POSTGRES_DB: warehouse
+      BI_READER_PASSWORD: ci-bi
+      METABASE_DB_PASSWORD: ci-mb
+      DBT_HOST: localhost
+      DBT_PORT: 5432
+      DBT_USER: dwh_admin
+      DBT_PASSWORD: ci-password
+      DBT_DBNAME: warehouse
+      DBT_PROFILES_DIR: dbt
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: tools/requirements.txt
+
+      - name: Instalacja zależności
+        run: pip install -r tools/requirements.txt
+
+      - name: Generowanie danych syntetycznych
+        run: python generator/generate_data.py --out data/raw
+
+      - name: Inicjalizacja hurtowni (schematy i role)
+        run: bash warehouse/init/01_init.sh
+
+      - name: Ładowanie danych do schematu raw
+        run: |
+          sudo mkdir -p /data
+          sudo ln -s "$GITHUB_WORKSPACE/data/raw" /data/raw
+          psql -v ON_ERROR_STOP=1 -f warehouse/load_raw.sql
+
+      - name: dbt build (modele + testy)
+        run: dbt build --project-dir dbt
+
+      - name: Raport jakości danych
+        if: success()
+        run: |
+          {
+            echo "## Raport jakości danych"
+            echo
+            echo "| Tabela | Kontrola | Problemy | Odsetek |"
+            echo "|---|---|---:|---:|"
+            psql -At -c "select format('| %s | %s | %s | %s%% |', source_table, check_name, issue_count, round(issue_rate * 100, 2)) from marts.dq_data_quality_checks"
+          } >> "$GITHUB_STEP_SUMMARY"

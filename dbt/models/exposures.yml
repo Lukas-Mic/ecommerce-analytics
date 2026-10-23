@@ -1,0 +1,40 @@
+version: 2
+
+# Ekspozycje pokazują w dokumentacji dbt, które dashboardy korzystają z których tabel.
+exposures:
+  - name: raport_sprzedazowy_power_bi
+    label: Raport sprzedażowy (Power BI)
+    type: dashboard
+    maturity: medium
+    description: Sprzedaż, marża, kategorie, regiony i zwroty. Model importu z warstwy marts.
+    depends_on:
+      - ref('fct_orders')
+      - ref('fct_order_items')
+      - ref('fct_returns')
+      - ref('dim_customers')
+      - ref('dim_products')
+      - ref('dim_date')
+    owner:
+      name: Autor projektu
+
+  - name: dashboard_marketingowy_metabase
+    label: Efektywność marketingu (Metabase)
+    type: dashboard
+    maturity: medium
+    description: ROAS, CAC i koszty kampanii w podziale na kanały.
+    depends_on:
+      - ref('fct_marketing_daily')
+      - ref('rpt_monthly_kpis')
+    owner:
+      name: Autor projektu
+
+  - name: analiza_klientow
+    label: Retencja i segmentacja klientów
+    type: analysis
+    maturity: medium
+    description: Kohorty retencji i segmenty RFM.
+    depends_on:
+      - ref('rpt_cohort_retention')
+      - ref('rpt_customer_rfm')
+    owner:
+      name: Autor projektu

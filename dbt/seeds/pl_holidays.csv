@@ -1,0 +1,43 @@
+holiday_date,holiday_name,is_day_off
+2024-01-01,Nowy Rok,true
+2024-01-06,Trzech Króli,true
+2024-03-31,Wielkanoc,true
+2024-04-01,Poniedziałek Wielkanocny,true
+2024-05-01,Święto Pracy,true
+2024-05-03,Święto Konstytucji 3 Maja,true
+2024-05-19,Zielone Świątki,true
+2024-05-30,Boże Ciało,true
+2024-08-15,Wniebowzięcie NMP,true
+2024-11-01,Wszystkich Świętych,true
+2024-11-11,Narodowe Święto Niepodległości,true
+2024-12-24,Wigilia,false
+2024-12-25,Boże Narodzenie (1. dzień),true
+2024-12-26,Boże Narodzenie (2. dzień),true
+2025-01-01,Nowy Rok,true
+2025-01-06,Trzech Króli,true
+2025-04-20,Wielkanoc,true
+2025-04-21,Poniedziałek Wielkanocny,true
+2025-05-01,Święto Pracy,true
+2025-05-03,Święto Konstytucji 3 Maja,true
+2025-06-08,Zielone Świątki,true
+2025-06-19,Boże Ciało,true
+2025-08-15,Wniebowzięcie NMP,true
+2025-11-01,Wszystkich Świętych,true
+2025-11-11,Narodowe Święto Niepodległości,true
+2025-12-24,Wigilia,true
+2025-12-25,Boże Narodzenie (1. dzień),true
+2025-12-26,Boże Narodzenie (2. dzień),true
+2026-01-01,Nowy Rok,true
+2026-01-06,Trzech Króli,true
+2026-04-05,Wielkanoc,true
+2026-04-06,Poniedziałek Wielkanocny,true
+2026-05-01,Święto Pracy,true
+2026-05-03,Święto Konstytucji 3 Maja,true
+2026-05-24,Zielone Świątki,true
+2026-06-04,Boże Ciało,true
+2026-08-15,Wniebowzięcie NMP,true
+2026-11-01,Wszystkich Świętych,true
+2026-11-11,Narodowe Święto Niepodległości,true
+2026-12-24,Wigilia,true
+2026-12-25,Boże Narodzenie (1. dzień),true
+2026-12-26,Boże Narodzenie (2. dzień),true

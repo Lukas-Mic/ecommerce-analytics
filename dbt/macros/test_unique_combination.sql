@@ -1,0 +1,7 @@
+{#- Test generyczny: unikalność kombinacji kolumn (bez zależności od pakietu dbt_utils). -#}
+{% test unique_combination(model, columns) %}
+select {{ columns | join(', ') }}, count(*) as duplicates
+from {{ model }}
+group by {{ columns | join(', ') }}
+having count(*) > 1
+{% endtest %}
