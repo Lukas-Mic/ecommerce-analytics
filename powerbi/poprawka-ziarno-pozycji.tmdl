@@ -1,0 +1,67 @@
+createOrReplace
+
+	ref table _Miary
+
+		/// Wartość pozycji po rabatach, bez anulowanych. Liczona z pozycji, więc reaguje na filtr kategorii i produktu.
+		measure 'Przychód netto' = CALCULATE ( SUM ( fct_order_items[net_amount] ), fct_order_items[is_cancelled] = FALSE () )
+			formatString: #,0 zł
+			displayFolder: Sprzedaż
+
+		/// Przychód netto pomniejszony o zwroty (według daty zamówienia).
+		measure 'Przychód po zwrotach' =
+				CALCULATE (
+					SUM ( fct_order_items[net_amount] ) - SUM ( fct_order_items[refund_amount] ),
+					fct_order_items[is_cancelled] = FALSE ()
+				)
+			formatString: #,0 zł
+			displayFolder: Sprzedaż
+
+		/// Przychód po zwrotach minus koszt sprzedanego towaru (z pozycji).
+		measure 'Marża brutto' = SUM ( fct_order_items[gross_margin] )
+			formatString: #,0 zł
+			displayFolder: Sprzedaż
+
+		/// Liczba nieanulowanych zamówień; z filtrem kategorii: zamówienia zawierające produkty z tej kategorii.
+		measure 'Zamówienia' = CALCULATE ( DISTINCTCOUNT ( fct_order_items[order_id] ), fct_order_items[is_cancelled] = FALSE () )
+			formatString: #,0
+			displayFolder: Sprzedaż
+
+		/// Liczba anulowanych zamówień.
+		measure 'Anulowane zamówienia' = CALCULATE ( DISTINCTCOUNT ( fct_order_items[order_id] ), fct_order_items[is_cancelled] = TRUE () )
+			formatString: #,0
+			displayFolder: Sprzedaż
+
+		/// Wartość udzielonych rabatów (bez anulowanych).
+		measure 'Rabaty' = CALCULATE ( SUM ( fct_order_items[discount_amount] ), fct_order_items[is_cancelled] = FALSE () )
+			formatString: #,0 zł
+			displayFolder: Sprzedaż
+
+		/// Klienci z co najmniej jednym nieanulowanym zamówieniem w okresie.
+		measure 'Aktywni klienci' = CALCULATE ( DISTINCTCOUNT ( fct_order_items[customer_id] ), fct_order_items[is_cancelled] = FALSE () )
+			formatString: #,0
+			displayFolder: Klienci
+
+		/// Zwroty jako odsetek przychodu netto, według daty zamówienia.
+		measure 'Wskaźnik zwrotów (wartość)' =
+				DIVIDE (
+					CALCULATE ( SUM ( fct_order_items[refund_amount] ), fct_order_items[is_cancelled] = FALSE () ),
+					[Przychód netto]
+				)
+			formatString: 0.0%
+			displayFolder: Zwroty
+
+		/// Zmiana r/r liczona tylko dla dni, dla których istnieją dane rok wcześniej - poprawna przy dowolnym zakresie dat.
+		measure 'Dynamika r/r (porównywalne okresy)' =
+				VAR _pierwszy = CALCULATE ( MIN ( fct_orders[order_date] ), REMOVEFILTERS () )
+				VAR _ostatni = CALCULATE ( MAX ( fct_orders[order_date] ), REMOVEFILTERS () )
+				VAR _dni =
+					FILTER (
+						VALUES ( dim_date[date_day] ),
+						dim_date[date_day] >= EDATE ( _pierwszy, 12 ) && dim_date[date_day] <= _ostatni
+					)
+				VAR _biezacy = CALCULATE ( [Przychód netto], _dni )
+				VAR _poprzedni = CALCULATE ( [Przychód netto], SAMEPERIODLASTYEAR ( _dni ) )
+				RETURN
+					DIVIDE ( _biezacy - _poprzedni, _poprzedni )
+			formatString: +0.0%;-0.0%;0.0%
+			displayFolder: Analiza czasowa

@@ -33,21 +33,30 @@ Każda strona ma ten sam układ:
 
 ---
 
+## Model: nagłówek i pozycje zamówienia
+
+`fct_order_items` łączy się z `fct_orders` (wiele-do-jednego, `order_id`), a nie bezpośrednio
+z `dim_date`, `dim_customers` i `dim_campaigns`. Filtry daty, klienta, kampanii i kanału płyną
+wymiar → `fct_orders` → `fct_order_items`, a filtr produktu/kategorii trafia wprost do pozycji.
+Miary sprzedażowe liczą z pozycji, więc reagują na wszystkie fragmentatory.
+
+---
+
 ## Strona 1: Przegląd zarządczy
 
 **Karty KPI** (Karta, wartość + w opcjach „Etykieta kategorii”):
-`Przychód netto` · `Marża brutto %` · `Zamówienia` · `Średnia wartość zamówienia` · `Dynamika r/r`
+`Przychód netto` · `Marża brutto %` · `Zamówienia` · `Średnia wartość zamówienia` · `Dynamika r/r (porównywalne okresy)`
 
 | Wizualizacja | Pola | Uwagi |
 |---|---|---|
 | Wykres liniowy: Przychód miesięcznie | Oś X: `dim_date[month_start]` · Y: `Przychód netto`, `Przychód netto rok wcześniej` | Dwie linie na tej samej osi = porównanie r/r. Oś X jako typ ciągły. |
-| Wykres słupkowy poziomy: Kategorie | Oś Y: `dim_products[category]` · X: `Przychód netto` (z `fct_order_items`!) | Patrz uwaga niżej. Sortuj malejąco. |
+| Wykres słupkowy poziomy: Kategorie | Oś Y: `dim_products[category]` · X: `Przychód netto` | Sortuj malejąco. |
 | Macierz: Kategoria x miesiąc | Wiersze: `dim_products[category]` · Kolumny: `dim_date[year]` · Wartości: `Marża brutto %` | Formatowanie warunkowe: skala kolorów tła (niebieska). |
 
-> **Przychód wg kategorii:** `Przychód netto` liczy z `fct_orders`, który nie ma kategorii (zamówienie
+> **Przychód wg kategorii:** miary sprzedażowe liczą z `fct_order_items` (ziarno: pozycja), bo
 > może mieć produkty z kilku). Do wykresu kategorii dodaj miarę:
-> `Przychód netto (pozycje) = CALCULATE ( SUM ( fct_order_items[net_amount] ), fct_order_items[is_cancelled] = FALSE () )`
-> To dobry temat na rozmowie rekrutacyjnej: **ziarno tabeli faktów**.
+> nagłówek zamówienia nie ma kategorii - jedno zamówienie może mieć produkty z kilku.
+> Dzięki temu filtr kategorii działa na wszystkich kartach. Temat na rozmowę: **ziarno tabeli faktów**.
 
 **Wnioski do znalezienia:** sezonowość (listopad-grudzień), wzrost r/r ok. 30-40%,
 marża rośnie w 2026.

@@ -1,15 +1,19 @@
-		/// Wartość zamówień po rabatach, bez anulowanych (brutto z VAT, jak w sklepie).
-		measure 'Przychód netto' = SUM ( fct_orders[net_revenue] )
+		/// Wartość pozycji po rabatach, bez anulowanych. Liczona z pozycji, więc reaguje na filtr kategorii i produktu.
+		measure 'Przychód netto' = CALCULATE ( SUM ( fct_order_items[net_amount] ), fct_order_items[is_cancelled] = FALSE () )
 			formatString: #,0 zł
 			displayFolder: Sprzedaż
 
-		/// Przychód netto pomniejszony o zwroty (zwroty przypisane do daty zamówienia).
-		measure 'Przychód po zwrotach' = SUM ( fct_orders[net_revenue_after_returns] )
+		/// Przychód netto pomniejszony o zwroty (według daty zamówienia).
+		measure 'Przychód po zwrotach' =
+				CALCULATE (
+					SUM ( fct_order_items[net_amount] ) - SUM ( fct_order_items[refund_amount] ),
+					fct_order_items[is_cancelled] = FALSE ()
+				)
 			formatString: #,0 zł
 			displayFolder: Sprzedaż
 
-		/// Przychód po zwrotach minus koszt sprzedanego towaru.
-		measure 'Marża brutto' = SUM ( fct_orders[gross_margin] )
+		/// Przychód po zwrotach minus koszt sprzedanego towaru (z pozycji).
+		measure 'Marża brutto' = SUM ( fct_order_items[gross_margin] )
 			formatString: #,0 zł
 			displayFolder: Sprzedaż
 
@@ -18,13 +22,13 @@
 			formatString: 0.0%
 			displayFolder: Sprzedaż
 
-		/// Liczba zamówień bez anulowanych.
-		measure 'Zamówienia' = CALCULATE ( COUNTROWS ( fct_orders ), fct_orders[is_cancelled] = FALSE () )
+		/// Liczba nieanulowanych zamówień; z filtrem kategorii: zamówienia zawierające produkty z tej kategorii.
+		measure 'Zamówienia' = CALCULATE ( DISTINCTCOUNT ( fct_order_items[order_id] ), fct_order_items[is_cancelled] = FALSE () )
 			formatString: #,0
 			displayFolder: Sprzedaż
 
 		/// Liczba anulowanych zamówień.
-		measure 'Anulowane zamówienia' = CALCULATE ( COUNTROWS ( fct_orders ), fct_orders[is_cancelled] = TRUE () )
+		measure 'Anulowane zamówienia' = CALCULATE ( DISTINCTCOUNT ( fct_order_items[order_id] ), fct_order_items[is_cancelled] = TRUE () )
 			formatString: #,0
 			displayFolder: Sprzedaż
 
@@ -44,7 +48,7 @@
 			displayFolder: Sprzedaż
 
 		/// Wartość udzielonych rabatów (bez anulowanych).
-		measure 'Rabaty' = CALCULATE ( SUM ( fct_orders[discount_amount] ), fct_orders[is_cancelled] = FALSE () )
+		measure 'Rabaty' = CALCULATE ( SUM ( fct_order_items[discount_amount] ), fct_order_items[is_cancelled] = FALSE () )
 			formatString: #,0 zł
 			displayFolder: Sprzedaż
 
@@ -54,7 +58,7 @@
 			displayFolder: Sprzedaż
 
 		/// Klienci z co najmniej jednym nieanulowanym zamówieniem w okresie.
-		measure 'Aktywni klienci' = CALCULATE ( DISTINCTCOUNT ( fct_orders[customer_id] ), fct_orders[is_cancelled] = FALSE () )
+		measure 'Aktywni klienci' = CALCULATE ( DISTINCTCOUNT ( fct_order_items[customer_id] ), fct_order_items[is_cancelled] = FALSE () )
 			formatString: #,0
 			displayFolder: Klienci
 
@@ -101,7 +105,7 @@
 		/// Zwroty jako odsetek przychodu netto, według daty zamówienia.
 		measure 'Wskaźnik zwrotów (wartość)' =
 				DIVIDE (
-					CALCULATE ( SUM ( fct_orders[refund_amount] ), fct_orders[is_cancelled] = FALSE () ),
+					CALCULATE ( SUM ( fct_order_items[refund_amount] ), fct_order_items[is_cancelled] = FALSE () ),
 					[Przychód netto]
 				)
 			formatString: 0.0%
@@ -179,6 +183,22 @@
 			formatString: +0.0%;-0.0%;0.0%
 			displayFolder: Analiza czasowa
 
+		/// Zmiana r/r liczona tylko dla dni, dla których istnieją dane rok wcześniej - poprawna przy dowolnym zakresie dat.
+		measure 'Dynamika r/r (porównywalne okresy)' =
+				VAR _pierwszy = CALCULATE ( MIN ( fct_orders[order_date] ), REMOVEFILTERS () )
+				VAR _ostatni = CALCULATE ( MAX ( fct_orders[order_date] ), REMOVEFILTERS () )
+				VAR _dni =
+					FILTER (
+						VALUES ( dim_date[date_day] ),
+						dim_date[date_day] >= EDATE ( _pierwszy, 12 ) && dim_date[date_day] <= _ostatni
+					)
+				VAR _biezacy = CALCULATE ( [Przychód netto], _dni )
+				VAR _poprzedni = CALCULATE ( [Przychód netto], SAMEPERIODLASTYEAR ( _dni ) )
+				RETURN
+					DIVIDE ( _biezacy - _poprzedni, _poprzedni )
+			formatString: +0.0%;-0.0%;0.0%
+			displayFolder: Analiza czasowa
+
 		/// Przychód netto w poprzednim miesiącu.
 		measure 'Przychód netto miesiąc wcześniej' = CALCULATE ( [Przychód netto], DATEADD ( dim_date[date_day], -1, MONTH ) )
 			formatString: #,0 zł
@@ -229,3 +249,4 @@
 					IF ( ABS ( _z ) >= 3, [Zamówienia] )
 			formatString: #,0
 			displayFolder: Anomalie
+
