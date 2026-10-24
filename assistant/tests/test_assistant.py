@@ -74,8 +74,11 @@ class TestEndToEnd(unittest.TestCase):
         self.assertEqual(result["summary"], "Komentarz testowy.")
 
     def test_database_blocks_writes_even_if_validator_missed(self):
-        with self.assertRaises(Exception):
-            main.run_query("select * from (select 1) x for update")  # wymaga zapisu - read only
+        for sql in ["create temp table t as select 1",       # transakcja tylko do odczytu
+                    "delete from marts.dim_date",            # brak uprawnień do zapisu
+                    "select * from marts.fct_orders limit 1 for update"]:
+            with self.subTest(sql=sql), self.assertRaises(Exception):
+                main.run_query(sql)
         with self.assertRaises(Exception):
             main.run_query("select count(*) from raw.orders")  # brak uprawnień do raw
 
