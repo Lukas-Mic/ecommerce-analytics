@@ -108,6 +108,10 @@
   figure { margin: 40px 0 0; }
   figure img { width: 100%; height: auto; display: block; border: 1px solid var(--rule); border-radius: 6px; }
   figcaption { color: var(--ink-2); font-size: 14px; margin-top: 8px; }
+  .report-frame { position: relative; width: 100%; aspect-ratio: 16 / 9.6; border: 1px solid var(--rule);
+                  border-radius: 6px; overflow: hidden; background: var(--sheet); }
+  .report-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  @media (max-width: 560px) { .report-frame { aspect-ratio: 3 / 4; } }
 
   @media (max-width: 820px) {
     .flow { grid-template-columns: 1fr 1fr; }
@@ -193,8 +197,8 @@
       <dd>
         <p>Strony przeglądu sprzedaży i jakości danych. 40 miar DAX: analiza czasowa,
            dynamika r/r liczona tylko na porównywalnych okresach, wykrywanie anomalii z-score.</p>
-        <p class="links"><a href="https://github.com/Lukas-Mic/ecommerce-analytics/tree/main/powerbi">Miary i projekt raportu</a>
-          <!-- PUBLISH_TO_WEB: tu wstaw link do opublikowanego raportu --></p>
+        <p class="links"><a href="#raport">Zobacz raport</a> ·
+          <a href="https://github.com/Lukas-Mic/ecommerce-analytics/tree/main/powerbi">miary i projekt raportu</a></p>
       </dd>
       <dt>Asystent AI<small>Claude API</small></dt>
       <dd>
@@ -246,6 +250,20 @@
          do 58% w modzie. W tym samym przeglądzie okazało się, że dynamika r/r +62% porównywała
          24 miesiące z 12. Na porównywalnych okresach wynosi +35%.</p>
     </div>
+  </div>
+</section>
+
+<section id="raport">
+  <div class="wrap">
+    <h2>Raport Power BI</h2>
+    <p class="lede prose">Dwie strony: przegląd sprzedaży oraz jakość danych i anomalie. Raport jest interaktywny,
+       więc fragmentatory, filtry i podpowiedzi działają. Wnioski pod wykresami powstały razem z Claude,
+       a każda liczba jest sprawdzona zapytaniem w hurtowni.</p>
+    <div class="report-frame">
+      <iframe title="Raport Power BI: przegląd sprzedaży oraz jakość danych i anomalie"
+              src="https://app.powerbi.com/view?r=eyJrIjoiNzMwYTVjZjgtOTI4Yy00NmVmLTgwZDctNDc5NzI4MGM1MmZmIiwidCI6IjQ4YzI0NGNmLTU3NjUtNGE1YS1iM2RmLWJlN2Q2NjRlNGNmOCJ9" loading="lazy" allowfullscreen></iframe>
+    </div>
+    <p class="links" style="margin-top:12px"><a href="https://app.powerbi.com/view?r=eyJrIjoiNzMwYTVjZjgtOTI4Yy00NmVmLTgwZDctNDc5NzI4MGM1MmZmIiwidCI6IjQ4YzI0NGNmLTU3NjUtNGE1YS1iM2RmLWJlN2Q2NjRlNGNmOCJ9">Otwórz raport na pełnym ekranie</a></p>
   </div>
 </section>
 

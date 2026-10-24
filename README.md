@@ -1,6 +1,6 @@
 # E-commerce Analytics Stack
 
-**Strona projektu: https://lumijo.pl** · asystent AI: https://lumijo.pl/asystent/
+**Strona projektu: https://lumijo.pl** · asystent AI: https://lumijo.pl/asystent/ · [raport Power BI](https://app.powerbi.com/view?r=eyJrIjoiNzMwYTVjZjgtOTI4Yy00NmVmLTgwZDctNDc5NzI4MGM1MmZmIiwidCI6IjQ4YzI0NGNmLTU3NjUtNGE1YS1iM2RmLWJlN2Q2NjRlNGNmOCJ9)
 
 [![dbt CI](https://github.com/Lukas-Mic/ecommerce-analytics/actions/workflows/dbt-ci.yml/badge.svg)](https://github.com/Lukas-Mic/ecommerce-analytics/actions/workflows/dbt-ci.yml)
 
@@ -174,7 +174,7 @@ zostało udokumentowane jako ostrzeżenie zamiast ukryte.
 
 ## Plan rozwoju
 
-- [ ] Raport Power BI (model gwiazdy, miary DAX, strona jakości danych) + publikacja *Publish to web*
+- [x] Raport Power BI (model gwiazdy, miary DAX, strona jakości danych) + publikacja *Publish to web*
 - [ ] Dashboardy Metabase (zarządczy, marketing, klienci)
 - [ ] Looker Studio na eksporcie do Arkuszy Google
 - [ ] Raport w Excelu odświeżany przez Power Query
