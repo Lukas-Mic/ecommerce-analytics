@@ -76,8 +76,11 @@ jobs:
           DB_USER: bi_reader
           DB_PASSWORD: ci-bi
         run: |
-          pip install -r assistant/requirements.txt
-          python -m unittest discover -s assistant/tests -v
+          pip install -r assistant/requirements.txt > /tmp/pip.log 2>&1 \
+            || { echo "::error title=pip install::$(tail -5 /tmp/pip.log | tr '\n' ' ')"; exit 1; }
+          python -m unittest discover -s assistant/tests -v > /tmp/tests.log 2>&1 \
+            || { cat /tmp/tests.log; echo "::error title=Testy asystenta::$(grep -E 'Error|FAIL|assert' /tmp/tests.log | tail -6 | tr '\n' ' ')"; exit 1; }
+          cat /tmp/tests.log
 
       - name: Raport jakości danych
         if: success()
