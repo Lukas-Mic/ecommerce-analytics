@@ -96,18 +96,21 @@ services:
       postgres:
         condition: service_healthy
 
-  # Opcjonalnie: publiczny dostęp do Metabase przez HTTPS (docker compose --profile public up -d)
+  # Publiczny dostęp przez HTTPS: portfolio + asystent pod DOMAIN, Metabase pod BI_DOMAIN
+  # (docker compose --profile public up -d)
   caddy:
     image: caddy:2-alpine
     profiles: ["public"]
     restart: unless-stopped
     environment:
       DOMAIN: ${DOMAIN:?Ustaw DOMAIN w pliku .env}
+      BI_DOMAIN: ${BI_DOMAIN:-bi.${DOMAIN}}
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./docs:/srv/portfolio:ro
       - caddy_data:/data
       - caddy_config:/config
     depends_on:

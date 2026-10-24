@@ -1,5 +1,7 @@
 # E-commerce Analytics Stack
 
+**Strona projektu: https://lumijo.pl** · asystent AI: https://lumijo.pl/asystent/
+
 [![dbt CI](https://github.com/Lukas-Mic/ecommerce-analytics/actions/workflows/dbt-ci.yml/badge.svg)](https://github.com/Lukas-Mic/ecommerce-analytics/actions/workflows/dbt-ci.yml)
 
 Kompletny, działający na jednym VPS-ie stos analityczny dla fikcyjnego polskiego sklepu
@@ -106,12 +108,13 @@ Metabase działa na `127.0.0.1:3000`. Z własnego komputera otworzysz go tunelem
 ssh -L 3000:localhost:3000 -L 8000:localhost:8000 -L 15432:localhost:5432 user@twoj-vps
 ```
 
-Publiczny dostęp przez HTTPS (dla rekruterów): ustaw `DOMAIN` w `.env`, skieruj rekord DNS
-na VPS i uruchom `docker compose --profile public up -d`. Caddy sam pobierze certyfikat.
+Publiczny dostęp przez HTTPS: ustaw `DOMAIN` w `.env`, skieruj rekordy DNS (`@`, `www`, `bi`)
+na VPS i uruchom `docker compose --profile public up -d`. Caddy sam pobierze certyfikaty i wystawi:
+stronę projektu (`docs/`) pod `https://<domena>/`, asystenta pod `/asystent/` i Metabase pod `bi.<domena>`.
 
 ## Asystent AI
 
-Pod `http://localhost:8000` (przez tunel) albo `https://<domena>/asystent/` (profil `public`)
+Na żywo: **https://lumijo.pl/asystent/**. Lokalnie: `http://localhost:8000` (przez tunel)
 działa asystent, który zamienia pytanie po polsku na SQL, wykonuje je w hurtowni i pokazuje
 wynik, wykres, komentarz oraz samo zapytanie do weryfikacji.
 

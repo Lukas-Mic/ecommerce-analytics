@@ -1,14 +1,33 @@
+# Strona główna projektu: portfolio + asystent AI
 {$DOMAIN} {
 	encode gzip
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		-Server
+	}
 
-	# Asystent AI pod https://<domena>/asystent/
+	# Asystent AI pod /asystent/
 	redir /asystent /asystent/
 	handle_path /asystent/* {
 		reverse_proxy assistant:8000
 	}
 
-	# Metabase pod resztą ścieżek
+	# Strona portfolio (katalog docs/ z repozytorium)
 	handle {
-		reverse_proxy metabase:3000
+		root * /srv/portfolio
+		file_server
 	}
+}
+
+# www -> domena główna
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}
+
+# Metabase na osobnej subdomenie
+{$BI_DOMAIN} {
+	encode gzip
+	reverse_proxy metabase:3000
 }
