@@ -22,7 +22,8 @@ flowchart LR
     M -->|bi_reader, tylko odczyt| PBI[Power BI]
     M --> LS[Looker Studio]
     M --> MB[Metabase]
-    M --> AI[Warstwa AI<br/>pytania w języku naturalnym]
+    M -->|bi_reader| AI[Asystent AI<br/>pytanie po polsku → SQL]
+    C[Claude API] <--> AI
 ```
 
 | Warstwa | Technologia | Rola |
@@ -30,7 +31,8 @@ flowchart LR
 | Źródła | Python (numpy, pandas) | Realistyczne dane z sezonowością, kampaniami i celowymi błędami |
 | Hurtownia | PostgreSQL 16 (Docker) | Schematy `raw → staging → intermediate → marts` |
 | Transformacje | dbt | 20 modeli, 58 testów, dokumentacja i graf zależności |
-| CI | GitHub Actions | pełny `dbt build` na świeżym Postgresie przy każdej zmianie |
+| CI | GitHub Actions | pełny `dbt build` i testy asystenta na świeżym Postgresie przy każdej zmianie |
+| AI | Claude API, Starlette | asystent: pytanie po polsku → SQL → wynik, wykres i komentarz |
 | BI | Power BI, Looker Studio, Metabase | Dashboardy na tej samej warstwie `marts` |
 | Bezpieczeństwo | role Postgres, tunel SSH, Caddy (HTTPS) | Narzędzia BI widzą tylko `marts`, wyłącznie do odczytu |
 
@@ -101,11 +103,40 @@ Pozostałe polecenia: `make help`.
 Metabase działa na `127.0.0.1:3000`. Z własnego komputera otworzysz go tunelem:
 
 ```bash
-ssh -L 3000:localhost:3000 -L 15432:localhost:5432 user@twoj-vps
+ssh -L 3000:localhost:3000 -L 8000:localhost:8000 -L 15432:localhost:5432 user@twoj-vps
 ```
 
 Publiczny dostęp przez HTTPS (dla rekruterów): ustaw `DOMAIN` w `.env`, skieruj rekord DNS
 na VPS i uruchom `docker compose --profile public up -d`. Caddy sam pobierze certyfikat.
+
+## Asystent AI
+
+Pod `http://localhost:8000` (przez tunel) albo `https://<domena>/asystent/` (profil `public`)
+działa asystent, który zamienia pytanie po polsku na SQL, wykonuje je w hurtowni i pokazuje
+wynik, wykres, komentarz oraz samo zapytanie do weryfikacji.
+
+```mermaid
+sequenceDiagram
+    participant U as Użytkownik
+    participant A as Asystent
+    participant C as Claude API
+    participant D as Postgres (bi_reader)
+    U->>A: pytanie po polsku
+    A->>C: pytanie + schemat marts (z bazy i opisów dbt) + reguły biznesowe
+    C-->>A: JSON: SQL, typ wykresu, założenia
+    A->>A: walidacja: tylko jeden SELECT, tylko schemat marts
+    A->>D: zapytanie (tylko odczyt, limit 8 s i 500 wierszy)
+    D-->>A: wynik (przy błędzie: jedna poprawka przez model)
+    A->>C: wynik → krótki komentarz (mniejszy model)
+    A-->>U: tabela, wykres, komentarz, SQL
+```
+
+**Zabezpieczenia:** konto `bi_reader` (tylko `SELECT` na `marts`, transakcje tylko do odczytu),
+walidator SQL (jedno zapytanie, bez DDL/DML, bez innych schematów), limit czasu i wierszy,
+limit pytań na IP i na dobę. Pytania i wygenerowany SQL trafiają do logu `questions.jsonl`.
+
+**Koszt:** jedno pytanie to ok. 6-8 tys. tokenów; przy domyślnym limicie 100 pytań na dobę
+koszt jest ograniczony z góry. Klucz API ustawiasz w `.env` (`ANTHROPIC_API_KEY`).
 
 ## Podłączenie narzędzi BI
 
@@ -144,7 +175,7 @@ zostało udokumentowane jako ostrzeżenie zamiast ukryte.
 - [ ] Dashboardy Metabase (zarządczy, marketing, klienci)
 - [ ] Looker Studio na eksporcie do Arkuszy Google
 - [ ] Raport w Excelu odświeżany przez Power Query
-- [ ] Asystent AI: pytania po polsku → SQL → wykres (z podglądem zapytania)
+- [x] Asystent AI: pytania po polsku → SQL → wykres (z podglądem zapytania)
 - [ ] Automatyczny tygodniowy komentarz do wyników i wykrywanie anomalii
 - [x] CI z `dbt build` w GitHub Actions
 - [ ] Harmonogram odświeżania (cron)
@@ -167,7 +198,9 @@ zostało udokumentowane jako ostrzeżenie zamiast ukryte.
 ├── .github/workflows/dbt-ci.yml # CI: dbt build przy każdej zmianie
 ├── scripts/setup_vps.sh         # konfiguracja świeżego VPS
 ├── tools/Dockerfile             # obraz z dbt i generatorem
-├── caddy/Caddyfile              # HTTPS dla Metabase (opcjonalnie)
+├── assistant/                   # asystent AI (Starlette + Claude API) z testami
+├── powerbi/                     # miary DAX (TMDL), motyw, projekt stron raportu
+├── caddy/Caddyfile              # HTTPS dla Metabase i asystenta (opcjonalnie)
 ├── docker-compose.yml
 └── Makefile
 ```

@@ -21,6 +21,10 @@ models:
     marts:
       +materialized: table
       +schema: marts
+      # opisy z plików .yml trafiają do komentarzy w Postgresie (czyta je m.in. asystent AI)
+      +persist_docs:
+        relation: true
+        columns: true
 
 seeds:
   ecommerce_dwh:

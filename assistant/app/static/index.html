@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Asystent hurtowni danych</title>
+<meta name="description" content="Zadaj pytanie po polsku - Claude napisze SQL, hurtownia go wykona, a Ty zobaczysz wynik, wykres i zapytanie.">
+<style>
+  :root {
+    color-scheme: light;
+    --page: #f4f4f1; --surface: #ffffff; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
+    --hair: #e1e0d9; --accent: #2a78d6; --accent-ink: #ffffff; --code: #f6f6f3; --err: #d03b3b;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+      --hair: #2c2c2a; --accent: #3987e5; --code: #232322; --err: #e66767;
+      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--page); color: var(--ink);
+         font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  main { max-width: 980px; margin: 0 auto; padding: 32px 16px 64px; }
+  header h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  header p { margin: 0 0 24px; color: var(--ink-2); max-width: 680px; }
+  .card { background: var(--surface); border: 1px solid var(--hair); border-radius: 12px; padding: 20px; }
+  form { display: flex; gap: 8px; }
+  textarea { flex: 1; resize: vertical; min-height: 48px; max-height: 160px; padding: 12px 14px;
+             font: inherit; color: inherit; background: var(--page); border: 1px solid var(--hair);
+             border-radius: 8px; }
+  textarea:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+  button.primary { padding: 0 20px; font: inherit; font-weight: 600; color: var(--accent-ink);
+                   background: var(--accent); border: 0; border-radius: 8px; cursor: pointer; }
+  button.primary:disabled { opacity: .55; cursor: progress; }
+  .examples { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+  .chip { font: inherit; font-size: 13px; color: var(--ink-2); background: transparent;
+          border: 1px solid var(--hair); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+  .chip:hover { border-color: var(--accent); color: var(--ink); }
+  #result { margin-top: 20px; display: none; }
+  #result h2 { font-size: 18px; margin: 0 0 6px; }
+  .summary { margin: 0 0 16px; color: var(--ink); }
+  .meta { color: var(--muted); font-size: 13px; margin-top: 12px; }
+  .assume { color: var(--ink-2); font-size: 13px; margin: 0 0 16px; }
+  .chart-wrap { position: relative; height: 320px; margin-bottom: 16px; }
+  .stat { font-size: 44px; font-weight: 650; letter-spacing: -0.02em; margin: 8px 0 16px; }
+  .stat small { display: block; font-size: 14px; font-weight: 400; color: var(--ink-2); letter-spacing: 0; }
+  .table-wrap { overflow-x: auto; max-height: 360px; border: 1px solid var(--hair); border-radius: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 13px; }
+  th, td { padding: 7px 10px; border-bottom: 1px solid var(--hair); text-align: left; white-space: nowrap; }
+  th { position: sticky; top: 0; background: var(--surface); color: var(--ink-2); font-weight: 600; }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; }
+  details { margin-top: 16px; }
+  summary { cursor: pointer; color: var(--ink-2); font-size: 14px; }
+  pre { background: var(--code); border-radius: 8px; padding: 12px; overflow-x: auto;
+        font: 12.5px/1.5 ui-monospace, "Cascadia Code", Consolas, monospace; white-space: pre-wrap; }
+  .error { color: var(--err); margin-top: 16px; }
+  .how { margin-top: 28px; color: var(--ink-2); font-size: 14px; }
+  .how ol { padding-left: 20px; margin: 8px 0 0; }
+  .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid var(--hair);
+             border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite;
+             vertical-align: -2px; margin-right: 8px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (max-width: 560px) { form { flex-direction: column; } button.primary { height: 44px; } }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Zapytaj hurtownię danych</h1>
+    <p>Napisz pytanie po polsku o sprzedaż, klientów, zwroty albo marketing fikcyjnego sklepu.
+       Claude napisze zapytanie SQL, hurtownia wykona je na koncie tylko do odczytu,
+       a Ty zobaczysz wynik, wykres, komentarz i samo zapytanie do sprawdzenia.</p>
+  </header>
+
+  <section class="card">
+    <form id="ask">
+      <textarea id="q" maxlength="400" placeholder="np. Jak zmieniał się przychód miesięcznie w 2026 roku?" required></textarea>
+      <button class="primary" id="go" type="submit">Zapytaj</button>
+    </form>
+    <div class="examples" id="examples"></div>
+    <div id="error" class="error" role="alert"></div>
+
+    <div id="result" aria-live="polite">
+      <h2 id="title"></h2>
+      <p class="assume" id="assume"></p>
+      <p class="summary" id="summary"></p>
+      <div id="viz"></div>
+      <div class="table-wrap"><table id="table"></table></div>
+      <details>
+        <summary>Zapytanie SQL wygenerowane przez AI</summary>
+        <pre id="sql"></pre>
+      </details>
+      <div class="meta" id="meta"></div>
+    </div>
+  </section>
+
+  <section class="how">
+    <strong>Jak to działa</strong>
+    <ol>
+      <li>Model dostaje opis schematu hurtowni (tabele, kolumny, przykładowe wartości) i reguły biznesowe.</li>
+      <li>Zwraca jedno zapytanie SELECT i propozycję wykresu. Serwer sprawdza zapytanie i odrzuca wszystko poza odczytem.</li>
+      <li>Zapytanie wykonuje się jako użytkownik <code>bi_reader</code>: tylko odczyt, tylko warstwa raportowa, limit czasu i wierszy.</li>
+      <li>Drugi, mniejszy model komentuje wynik wyłącznie na podstawie zwróconych liczb.</li>
+    </ol>
+  </section>
+</main>
+
+<script src="static/chart.umd.min.js"></script>
+<script>
+const EXAMPLES = [
+  "Jak zmieniał się przychód netto miesięcznie?",
+  "Która kategoria ma najwyższy odsetek zwrotów i z jakiego powodu?",
+  "ROAS kanałów marketingowych w 2026 roku",
+  "Ile zamówień było dziennie w marcu 2026?",
+  "Top 10 produktów według marży brutto",
+  "Ilu klientów jest w każdym segmencie RFM i ile przynoszą przychodu?",
+  "Jaka jest średnia wartość zamówienia w aplikacji, na stronie i w marketplace?",
+  "Jak wygląda retencja kohort z IV kwartału 2024?",
+];
+const $ = id => document.getElementById(id);
+const nf = new Intl.NumberFormat("pl-PL", { maximumFractionDigits: 2 });
+const nf2 = new Intl.NumberFormat("pl-PL", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const pf = new Intl.NumberFormat("pl-PL", { style: "percent", maximumFractionDigits: 1 });
+let chart;
+
+for (const e of EXAMPLES) {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chip"; b.textContent = e;
+  b.onclick = () => { $("q").value = e; ask(); };
+  $("examples").append(b);
+}
+$("ask").addEventListener("submit", ev => { ev.preventDefault(); ask(); });
+$("q").addEventListener("keydown", ev => {
+  if (ev.key === "Enter" && !ev.shiftKey) { ev.preventDefault(); ask(); }
+});
+
+const isPct = name => /%/.test(name);
+function fmt(v, col) {
+  if (v === null || v === undefined) return "";
+  if (typeof v === "number") return isPct(col) ? pf.format(v) : (Number.isInteger(v) ? nf.format(v) : nf2.format(v));
+  return String(v);
+}
+
+async function ask() {
+  const question = $("q").value.trim();
+  if (!question) return;
+  $("error").textContent = ""; $("go").disabled = true;
+  $("go").innerHTML = '<span class="spinner"></span>Myślę…';
+  try {
+    const res = await fetch("api/ask", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question }),
+    });
+    const data = await res.json();
+    if (!res.ok || data.error) throw new Error(data.error || "Błąd serwera.");
+    if (data.message) { $("result").style.display = "none"; $("error").textContent = data.message; return; }
+    render(data);
+  } catch (e) {
+    $("error").textContent = e.message;
+  } finally {
+    $("go").disabled = false; $("go").textContent = "Zapytaj";
+  }
+}
+
+function render(d) {
+  $("result").style.display = "block";
+  $("title").textContent = d.title || "Wynik";
+  $("assume").textContent = d.assumptions ? "Założenie: " + d.assumptions : "";
+  $("summary").textContent = d.summary || "";
+  $("sql").textContent = d.sql;
+  const tokens = d.usage ? (d.usage.input_tokens + d.usage.output_tokens).toLocaleString("pl-PL") : "?";
+  $("meta").textContent = `${d.rows.length} wierszy${d.truncated ? " (ucięte)" : ""} · ${(d.elapsed_ms / 1000).toFixed(1)} s · model ${d.model} · ${tokens} tokenów`;
+
+  const t = $("table"); t.innerHTML = "";
+  const head = t.createTHead().insertRow();
+  d.columns.forEach((c, i) => {
+    const th = document.createElement("th"); th.textContent = c;
+    if (d.rows.length && typeof d.rows[0][i] === "number") th.className = "num";
+    head.append(th);
+  });
+  const body = t.createTBody();
+  d.rows.forEach(r => {
+    const tr = body.insertRow();
+    r.forEach((v, i) => { const td = tr.insertCell(); td.textContent = fmt(v, d.columns[i]);
+                          if (typeof v === "number") td.className = "num"; });
+  });
+  drawViz(d);
+}
+
+function drawViz(d) {
+  const viz = $("viz"); viz.innerHTML = "";
+  if (chart) { chart.destroy(); chart = null; }
+  const c = d.chart || {};
+  const yCols = (c.y || []).filter(y => d.columns.includes(y)).slice(0, 4);
+  if (c.type === "number" && d.rows.length && yCols.length) {
+    const i = d.columns.indexOf(yCols[0]);
+    viz.innerHTML = `<div class="stat"></div>`;
+    viz.firstChild.textContent = fmt(d.rows[0][i], yCols[0]);
+    const s = document.createElement("small"); s.textContent = yCols[0]; viz.firstChild.append(s);
+    return;
+  }
+  if (!window.Chart || !["line", "bar"].includes(c.type) || !yCols.length || !d.columns.includes(c.x)) return;
+  const xi = d.columns.indexOf(c.x);
+  const css = getComputedStyle(document.documentElement);
+  const colors = ["--s1", "--s2", "--s3", "--s4"].map(v => css.getPropertyValue(v).trim());
+  const ink2 = css.getPropertyValue("--ink-2").trim(), hair = css.getPropertyValue("--hair").trim();
+  const pct = yCols.every(isPct);
+  viz.innerHTML = '<div class="chart-wrap"><canvas></canvas></div>';
+  chart = new Chart(viz.querySelector("canvas"), {
+    type: c.type,
+    data: {
+      labels: d.rows.map(r => r[xi]),
+      datasets: yCols.map((y, k) => {
+        const yi = d.columns.indexOf(y);
+        return { label: y, data: d.rows.map(r => r[yi]), borderColor: colors[k], backgroundColor: colors[k],
+                 borderWidth: 2, pointRadius: d.rows.length > 40 ? 0 : 3, pointHoverRadius: 5,
+                 borderRadius: 4, maxBarThickness: 36, tension: 0 };
+      }),
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      indexAxis: c.type === "bar" && d.rows.length > 8 ? "y" : "x",
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { display: yCols.length > 1, labels: { color: ink2, boxWidth: 12 } },
+        tooltip: { callbacks: { label: ctx => `${ctx.dataset.label}: ${fmt(ctx.parsed[ctx.chart.options.indexAxis === "y" ? "x" : "y"], ctx.dataset.label)}` } },
+      },
+      scales: {
+        x: { ticks: { color: ink2, maxRotation: 0, autoSkip: true }, grid: { color: hair } },
+        y: { ticks: { color: ink2, callback: v => pct ? pf.format(v) : nf.format(v) }, grid: { color: hair },
+             beginAtZero: c.type === "bar" },
+      },
+    },
+  });
+  if (chart.options.indexAxis === "y") {
+    chart.options.scales.x.ticks.callback = v => pct ? pf.format(v) : nf.format(v);
+    chart.options.scales.y.ticks.callback = function (v) { return this.getLabelForValue(v); };
+    chart.update();
+  }
+}
+</script>
+</body>
+</html>

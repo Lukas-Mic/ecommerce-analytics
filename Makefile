@@ -11,8 +11,8 @@ help: ## Lista poleceń
 env: ## Tworzy .env z szablonu (potem zmień hasła!)
 	@test -f .env || (cp .env.example .env && echo "Utworzono .env - ustaw własne hasła.")
 
-up: ## Uruchamia Postgres i Metabase
-	$(COMPOSE) up -d postgres metabase
+up: ## Uruchamia Postgres, Metabase i asystenta AI
+	$(COMPOSE) up -d --build postgres metabase assistant
 
 down: ## Zatrzymuje kontenery (dane zostają)
 	$(COMPOSE) down

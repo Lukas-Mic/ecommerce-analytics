@@ -68,6 +68,17 @@ jobs:
       - name: dbt build (modele + testy)
         run: dbt build --project-dir dbt
 
+      - name: Testy asystenta AI (walidator SQL + przebieg na hurtowni)
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: warehouse
+          DB_USER: bi_reader
+          DB_PASSWORD: ci-bi
+        run: |
+          pip install -r assistant/requirements.txt
+          python -m unittest discover -s assistant/tests -v
+
       - name: Raport jakości danych
         if: success()
         run: |

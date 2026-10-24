@@ -1,4 +1,14 @@
 {$DOMAIN} {
 	encode gzip
-	reverse_proxy metabase:3000
+
+	# Asystent AI pod https://<domena>/asystent/
+	redir /asystent /asystent/
+	handle_path /asystent/* {
+		reverse_proxy assistant:8000
+	}
+
+	# Metabase pod resztą ścieżek
+	handle {
+		reverse_proxy metabase:3000
+	}
 }

@@ -55,6 +55,29 @@ services:
       - "127.0.0.1:3000:3000"
     mem_limit: 1536m
 
+  # Asystent AI: pytania po polsku -> SQL (Claude API) -> wynik, tylko odczyt warstwy marts
+  assistant:
+    build: ./assistant
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      DB_HOST: postgres
+      DB_NAME: ${POSTGRES_DB:-warehouse}
+      DB_USER: bi_reader
+      DB_PASSWORD: ${BI_READER_PASSWORD}
+      MODEL_SQL: ${ASSISTANT_MODEL_SQL:-claude-sonnet-5-5}
+      MODEL_SUMMARY: ${ASSISTANT_MODEL_SUMMARY:-claude-haiku-5-5}
+      DAILY_LIMIT: ${ASSISTANT_DAILY_LIMIT:-100}
+      HOURLY_LIMIT_PER_IP: ${ASSISTANT_HOURLY_LIMIT_PER_IP:-15}
+    ports:
+      - "127.0.0.1:8000:8000"
+    volumes:
+      - assistant_logs:/data/logs
+    mem_limit: 256m
+
   # Narzędzia uruchamiane na żądanie: generator danych + dbt
   tools:
     build: ./tools
@@ -89,8 +112,10 @@ services:
       - caddy_config:/config
     depends_on:
       - metabase
+      - assistant
 
 volumes:
   pgdata:
+  assistant_logs:
   caddy_data:
   caddy_config:
