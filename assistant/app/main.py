@@ -37,6 +37,9 @@ DAILY_LIMIT = int(os.getenv("DAILY_LIMIT", "100"))
 MAX_ROWS = int(os.getenv("MAX_ROWS", "500"))
 STATEMENT_TIMEOUT_MS = int(os.getenv("STATEMENT_TIMEOUT_MS", "8000"))
 MAX_QUESTION_CHARS = 400
+SQL_MAX_TOKENS = int(os.getenv("SQL_MAX_TOKENS", "8000"))
+SUMMARY_MAX_TOKENS = int(os.getenv("SUMMARY_MAX_TOKENS", "3000"))  # z zapasem na myślenie modelu
+SUMMARY_MAX_CHARS = 14000  # ok. 4-5 tys. tokenów danych dla modelu komentującego
 LOG_PATH = Path(os.getenv("LOG_PATH", "/data/logs/questions.jsonl"))
 STATIC_DIR = Path(__file__).parent / "static"
 
@@ -77,7 +80,11 @@ def _anthropic_call(model: str, system: str, user: str, max_tokens: int):
         # Modele 5.5 nie przyjmują temperature/top_p/top_k.
     )
     # Odpowiedź może zawierać bloki "thinking" - bierzemy tylko tekst.
+    # Myślenie wlicza się do max_tokens, więc przy zbyt niskim limicie tekst bywa pusty.
     text = "".join(b.text for b in resp.content if getattr(b, "type", "") == "text")
+    if not text.strip():
+        log.warning("Pusta odpowiedź modelu %s (stop_reason=%s, output_tokens=%s)",
+                    model, resp.stop_reason, resp.usage.output_tokens)
     usage = {"input_tokens": resp.usage.input_tokens, "output_tokens": resp.usage.output_tokens}
     return text, usage
 
@@ -195,6 +202,16 @@ def execute(sql: str):
     return columns, rows, truncated
 
 
+def summary_rows(columns, rows, max_chars: int = SUMMARY_MAX_CHARS) -> int:
+    """Ile wierszy zmieści się w podglądzie dla modelu komentującego (limit znaków JSON)."""
+    size = len(json.dumps(columns, ensure_ascii=False)) + 40
+    for i, r in enumerate(rows):
+        size += len(json.dumps(r, ensure_ascii=False, default=str)) + 1
+        if size > max_chars:
+            return max(i, 1)
+    return len(rows)
+
+
 def answer(question: str) -> dict:
     system = context.SYSTEM_PROMPT.format(rules=context.BUSINESS_RULES, schema=schema_text())
     usage_total = {"input_tokens": 0, "output_tokens": 0}
@@ -206,7 +223,7 @@ def answer(question: str) -> dict:
     prompt = f"Pytanie: {question}"
     plan, last_error = None, None
     for attempt in range(2):  # druga próba z komunikatem błędu z bazy
-        text, usage = call_model(MODEL_SQL, system, prompt, 4000)
+        text, usage = call_model(MODEL_SQL, system, prompt, SQL_MAX_TOKENS)
         add(usage)
         plan = parse_model_json(text)
         if not plan.get("sql"):
@@ -228,13 +245,17 @@ def answer(question: str) -> dict:
 
     summary = None
     if rows:
-        preview = json.dumps({"kolumny": columns, "wiersze": rows[:60]}, ensure_ascii=False, default=str)
+        shown = summary_rows(columns, rows)
+        preview = json.dumps({"kolumny": columns, "wiersze": rows[:shown]}, ensure_ascii=False, default=str)
+        note = (f"pełny wynik, {len(rows)} wierszy" if shown == len(rows)
+                else f"pierwsze {shown} z {len(rows)} wierszy - komentuj ostrożnie, nie znasz całości")
         try:
             summary, usage = call_model(
                 MODEL_SUMMARY, context.SUMMARY_PROMPT,
-                f"Pytanie: {question}\nZapytanie SQL:\n{sql}\nWynik (max 60 wierszy):\n{preview}", 800)
+                f"Pytanie: {question}\nZapytanie SQL:\n{sql}\nWynik ({note}):\n{preview}",
+                SUMMARY_MAX_TOKENS)
             add(usage)
-            summary = summary.strip()
+            summary = summary.strip() or None
         except Exception as e:  # komentarz jest dodatkiem - wynik i tak pokazujemy
             log.warning("Komentarz niedostępny: %s", e)
 

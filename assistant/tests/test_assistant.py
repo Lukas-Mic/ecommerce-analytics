@@ -54,6 +54,17 @@ def fake_model(sql):
     return call
 
 
+class TestSummaryPreview(unittest.TestCase):
+    def test_small_result_fully_shown(self):
+        self.assertEqual(main.summary_rows(["a", "b"], [[1, 2]] * 10), 10)
+
+    def test_large_result_truncated_to_limit(self):
+        rows = [["2026-04-01", "Dom i ogród", "app", 278, 404, 105288.26, 102081.97, 47555.12, 0.4659]] * 300
+        n = main.summary_rows(["c"] * 9, rows)
+        self.assertTrue(0 < n < 300)
+        self.assertLessEqual(len(json.dumps(rows[:n], ensure_ascii=False)), main.SUMMARY_MAX_CHARS)
+
+
 @unittest.skipUnless(os.getenv("DB_PASSWORD"), "brak połączenia z hurtownią")
 class TestEndToEnd(unittest.TestCase):
     def test_schema_context(self):

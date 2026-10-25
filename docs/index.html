@@ -112,6 +112,14 @@
                   border-radius: 6px; overflow: hidden; background: var(--sheet); }
   .report-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
   @media (max-width: 560px) { .report-frame { aspect-ratio: 3 / 4; } }
+  .demo { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 40px; align-items: start; }
+  .demo figure { margin: 0; }
+  .demo ol { margin: 0 0 20px; padding-left: 20px; }
+  .demo ol li { margin-bottom: 10px; }
+  .demo .cta { display: inline-block; padding: 10px 18px; border-radius: 6px; background: var(--keep);
+               color: #fff; text-decoration: none; font-weight: 700; }
+  .demo .cta:hover { filter: brightness(1.08); }
+  @media (max-width: 820px) { .demo { grid-template-columns: 1fr; } .demo figure { max-width: 440px; } }
 
   @media (max-width: 820px) {
     .flow { grid-template-columns: 1fr 1fr; }
@@ -264,6 +272,32 @@
               src="https://app.powerbi.com/view?r=eyJrIjoiNzMwYTVjZjgtOTI4Yy00NmVmLTgwZDctNDc5NzI4MGM1MmZmIiwidCI6IjQ4YzI0NGNmLTU3NjUtNGE1YS1iM2RmLWJlN2Q2NjRlNGNmOCJ9" loading="lazy" allowfullscreen></iframe>
     </div>
     <p class="links" style="margin-top:12px"><a href="https://app.powerbi.com/view?r=eyJrIjoiNzMwYTVjZjgtOTI4Yy00NmVmLTgwZDctNDc5NzI4MGM1MmZmIiwidCI6IjQ4YzI0NGNmLTU3NjUtNGE1YS1iM2RmLWJlN2Q2NjRlNGNmOCJ9">Otwórz raport na pełnym ekranie</a></p>
+  </div>
+</section>
+
+<section id="asystent">
+  <div class="wrap">
+    <h2>Asystent AI w działaniu</h2>
+    <p class="lede prose">Pytanie po polsku zamienia się w zapytanie SQL do hurtowni. Wynik wraca w kilka sekund,
+       razem z wykresem, komentarzem i samym zapytaniem do sprawdzenia.</p>
+    <div class="demo">
+      <figure>
+        <a href="/asystent/"><img src="img/asystent-przyklad.png" width="964" height="1290" loading="lazy"
+             alt="Asystent odpowiada na pytanie o średnią wartość zamówienia w aplikacji, na stronie i w marketplace: założenia, komentarz, wykres słupkowy i tabela"></a>
+        <figcaption>Pytanie o średnią wartość zamówienia w trzech kanałach sprzedaży.</figcaption>
+      </figure>
+      <div>
+        <ol class="prose">
+          <li>Model dostaje opis hurtowni: tabele, kolumny, przykładowe wartości i reguły biznesowe,
+              np. że kategorie produktów są tylko w pozycjach zamówień.</li>
+          <li>Zwraca jedno zapytanie SELECT, typ wykresu i przyjęte założenia. Serwer odrzuca wszystko
+              poza odczytem warstwy raportowej.</li>
+          <li>Zapytanie wykonuje się na koncie tylko do odczytu, z limitem czasu i liczby wierszy.</li>
+          <li>Drugi, mniejszy model pisze komentarz wyłącznie na podstawie zwróconych liczb.</li>
+        </ol>
+        <p><a class="cta" href="/asystent/">Zadaj własne pytanie</a></p>
+      </div>
+    </div>
   </div>
 </section>
 
