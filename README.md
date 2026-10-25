@@ -5,8 +5,8 @@
 [![dbt CI](https://github.com/Lukas-Mic/ecommerce-analytics/actions/workflows/dbt-ci.yml/badge.svg)](https://github.com/Lukas-Mic/ecommerce-analytics/actions/workflows/dbt-ci.yml)
 
 Kompletny, działający na jednym VPS-ie stos analityczny dla fikcyjnego polskiego sklepu
-internetowego: od surowych danych, przez hurtownię i testy jakości, po dashboardy
-w Power BI, Looker Studio i Metabase.
+internetowego: od surowych danych, przez hurtownię i testy jakości, po interaktywny raport
+w Power BI i asystenta AI, który odpowiada na pytania o dane po polsku.
 
 Projekt powstał we współpracy z AI (Claude). Sekcja [Jak wykorzystano AI](#jak-wykorzystano-ai)
 opisuje, co wygenerowało AI, a co zostało zweryfikowane i poprawione.
@@ -15,17 +15,16 @@ opisuje, co wygenerowało AI, a co zostało zweryfikowane i poprawione.
 
 ```mermaid
 flowchart LR
-    G[Generator Python<br/>dane syntetyczne] -->|CSV| R[(raw<br/>dane 1:1)]
-    subgraph Postgres 16 · VPS
-        R -->|dbt| S[(staging<br/>czyszczenie, typy)]
-        S --> I[(intermediate)]
-        I --> M[(marts<br/>model gwiazdy + raporty)]
+    G["Generator Python<br/>dane syntetyczne"] -->|CSV| R[("raw<br/>dane 1:1")]
+    subgraph VPS["Postgres 16 na VPS"]
+        R -->|dbt| S[("staging<br/>czyszczenie i typy")]
+        S --> I[("intermediate")]
+        I --> M[("marts<br/>model gwiazdy i raporty")]
     end
-    M -->|bi_reader, tylko odczyt| PBI[Power BI]
-    M --> LS[Looker Studio]
-    M --> MB[Metabase]
-    M -->|bi_reader| AI[Asystent AI<br/>pytanie po polsku → SQL]
-    C[Claude API] <--> AI
+    M -->|"bi_reader, tylko odczyt"| PBI["Power BI"]
+    M --> MB["Metabase"]
+    M -->|"bi_reader"| AI["Asystent AI<br/>pytanie po polsku na SQL"]
+    C["Claude API"] <--> AI
 ```
 
 | Warstwa | Technologia | Rola |
@@ -35,7 +34,7 @@ flowchart LR
 | Transformacje | dbt | 20 modeli, 58 testów, dokumentacja i graf zależności |
 | CI | GitHub Actions | pełny `dbt build` i testy asystenta na świeżym Postgresie przy każdej zmianie |
 | AI | Claude API, Starlette | asystent: pytanie po polsku → SQL → wynik, wykres i komentarz |
-| BI | Power BI, Looker Studio, Metabase | Dashboardy na tej samej warstwie `marts` |
+| BI | Power BI, Metabase | Raport Power BI (Publish to web) i self-service BI na tej samej warstwie `marts` |
 | Bezpieczeństwo | role Postgres, tunel SSH, Caddy (HTTPS) | Narzędzia BI widzą tylko `marts`, wyłącznie do odczytu |
 
 ## Dane
@@ -125,13 +124,13 @@ sequenceDiagram
     participant C as Claude API
     participant D as Postgres (bi_reader)
     U->>A: pytanie po polsku
-    A->>C: pytanie + schemat marts (z bazy i opisów dbt) + reguły biznesowe
-    C-->>A: JSON: SQL, typ wykresu, założenia
-    A->>A: walidacja: tylko jeden SELECT, tylko schemat marts
+    A->>C: pytanie, schemat marts i reguły biznesowe
+    C-->>A: JSON z zapytaniem SQL, typem wykresu i założeniami
+    A->>A: walidacja - tylko jeden SELECT na schemacie marts
     A->>D: zapytanie (tylko odczyt, limit 8 s i 500 wierszy)
-    D-->>A: wynik (przy błędzie: jedna poprawka przez model)
-    A->>C: wynik → krótki komentarz (mniejszy model)
-    A-->>U: tabela, wykres, komentarz, SQL
+    D-->>A: wynik lub błąd (wtedy jedna poprawka przez model)
+    A->>C: wynik do skomentowania (mniejszy model)
+    A-->>U: tabela, wykres, komentarz i SQL
 ```
 
 **Zabezpieczenia:** konto `bi_reader` (tylko `SELECT` na `marts`, transakcje tylko do odczytu),
