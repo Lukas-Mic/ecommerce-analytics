@@ -365,22 +365,27 @@
     <h2>Jak wykorzystałem AI</h2>
     <p class="lede prose">Projekt powstał we współpracy z Claude i nie ukrywam tego. AI pisało dużo kodu,
        a moja praca polegała na decyzjach, budowie raportu i sprawdzaniu, czy liczby się zgadzają.</p>
-    <!-- Uzupełnij kolumnę "Ja" własnymi słowami - to najważniejsza część strony dla rekrutera. -->
     <table class="ai">
       <thead><tr><th>Etap</th><th>Co zrobiło AI</th><th>Co zrobiłem ja</th></tr></thead>
       <tbody>
-        <tr><td>Wybór narzędzi</td>
+        <tr><td>Wybór zakresu</td>
             <td>Przegląd ofert pracy i popularności platform BI</td>
-            <td>Wybór branży, stosu i zakresu projektu pod rynek w Polsce</td></tr>
-        <tr><td>Infrastruktura</td>
-            <td>Skrypt konfiguracji serwera, Docker Compose, CI</td>
-            <td>Postawienie i zabezpieczenie VPS, uruchomienie całego stosu</td></tr>
-        <tr><td>Hurtownia</td>
-            <td>Generator danych, modele i testy dbt</td>
-            <td>Weryfikacja wyników w bazie i na kolejnych przebiegach testów</td></tr>
+            <td>Zakres projektu pod polski rynek: najpopularniejsze narzędzia, bazy danych i branża</td></tr>
+        <tr><td>Generator danych</td>
+            <td>Kod generatora, wybór zdarzeń i incydentów</td>
+            <td>Sprawdzenie, czy dane zawierają typowe błędy, sezonowość i incydenty do wykrycia</td></tr>
+        <tr><td>Model danych</td>
+            <td>Cały model w dbt: warstwy, model gwiazdy, testy</td>
+            <td>Ręczne odtworzenie relacji w Power BI, przebudowa na układ nagłówek-pozycja po wykryciu błędu</td></tr>
         <tr><td>Power BI</td>
             <td>Miary DAX, motyw, projekt stron</td>
-            <td>Model relacji, budowa stron, wnioski z danych, kontrola wartości w raporcie</td></tr>
+            <td>Budowa stron, kontrola wartości, pierwsze wersje wniosków, publikacja</td></tr>
+        <tr><td>Weryfikacja</td>
+            <td>Testy dbt i asystenta, CI</td>
+            <td>Porównanie wyników z trzech źródeł: obliczeń modelu AI, asystenta na hurtowni na VPS i Power BI; przychód zgadza się co do grosza</td></tr>
+        <tr><td>Infrastruktura</td>
+            <td>Skrypt serwera, Docker Compose, CI</td>
+            <td>Reinstalacja i zabezpieczenie VPS, domena i DNS, HTTPS, konto Power BI na własnej domenie</td></tr>
         <tr><td>Asystent</td>
             <td>Kod aplikacji, zabezpieczenia, testy</td>
             <td>Wdrożenie, testy na prawdziwych pytaniach, ocena odpowiedzi</td></tr>
@@ -389,6 +394,8 @@
             <td>Konfiguracja dzierżawy, licencji i rozliczeń, budowa w Power Platform, testy zachowania agenta, nagranie</td></tr>
       </tbody>
     </table>
+    <p class="stack">Pełna lista problemów wykrytych przy weryfikacji jest w
+       <a href="https://github.com/Lukas-Mic/ecommerce-analytics#co-wyszło-przy-weryfikacji">README projektu</a>.</p>
 
     <!-- Zrzut raportu: zapisz obraz jako docs/img/raport-przeglad.png i odkomentuj poniższy blok.
     <figure>

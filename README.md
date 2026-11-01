@@ -169,18 +169,34 @@ i nie może niczego zmienić.
 
 ## Jak wykorzystano AI
 
-| Element | Co zrobiło AI | Co sprawdził/zmienił autor |
+Projekt powstał we współpracy z Claude i nie ukrywam tego. Większość kodu napisało AI.
+Moja rola to zakres i wymagania, konfiguracja infrastruktury i kont, budowa raportu
+Power BI oraz sprawdzanie, czy liczby się zgadzają.
+
+| Etap | Co zrobiło AI | Co zrobiłem ja |
 |---|---|---|
-| Analiza rynku | przegląd ofert pracy i popularności narzędzi BI | wybór stosu technologicznego |
-| Generator danych | kod generatora, rozkłady, scenariusze incydentów | *(uzupełnij)* |
-| Modele dbt | SQL warstw staging/marts, testy, dokumentacja | *(uzupełnij)* |
-| Weryfikacja | budowa modeli na Postgres 16, kontrola KPI pod kątem realizmu | *(uzupełnij)* |
+| Analiza rynku i zakres | przegląd ofert pracy i popularności narzędzi BI, propozycja architektury | wybór zakresu projektu pod aktualną sytuację na polskim rynku: najpopularniejsze narzędzia (Power BI, SQL), bazy danych i branża (e-commerce) |
+| Generator danych | kod generatora, wybór zdarzeń i incydentów (sezonowość, awaria płatności, luka w eksporcie, duplikaty, konta testowe) | weryfikacja, czy dane rzeczywiście zawierają typowe błędy z praktyki, zmiany sezonowe i incydenty; celem był szeroki przekrój potencjalnych problemów do wykrycia w analizie |
+| Model danych (dbt) | cały model: warstwy staging/marts, model gwiazdy, testy, dokumentacja | odtworzenie modelu w Power BI: ręczne przypisanie każdej relacji w widoku modelu (z wyłączonym autowykrywaniem), a po wykryciu błędu przebudowa na układ nagłówek-pozycja zamówienia |
+| Raport Power BI | miary DAX, motyw, projekt stron, propozycje wniosków | budowa obu stron, formatowanie, kontrola wartości na wizualizacjach, pierwsze wersje wniosków, publikacja przez Publish to web |
+| Weryfikacja | testy dbt, testy asystenta, CI w GitHub Actions | porównanie wyników z trzech źródeł: obliczeń modelu AI na jego lokalnej kopii hurtowni, odpowiedzi asystenta AI (Claude API) na hurtowni na VPS oraz Power BI na danych importowanych; przychód netto zgadza się co do grosza (16 026 992,44 zł) |
+| Infrastruktura | skrypt konfiguracji serwera, Docker Compose, Caddy, instrukcje | czysta reinstalacja VPS, klucze SSH na dwóch komputerach, przeniesienie domeny (DNS w MyDevil, nie w GoDaddy), certyfikaty HTTPS, hasła i uprawnienia, klucz Claude API z limitem wydatków |
+| Konto Power BI | opcje publikacji i ich koszty | darmowa ścieżka zamiast płatnego Microsoft 365: konto na własnej domenie, przejęcie administracji dzierżawy przez rekord DNS, włączenie Publish to web |
+| Asystent AI | kod aplikacji, zabezpieczenia, testy | wdrożenie na serwerze, testy na prawdziwych pytaniach i ocena odpowiedzi |
 | Agent Copilot Studio | projekt tabeli, przepływu i agenta, instrukcje krok po kroku, diagnoza błędów ze zrzutów ekranu | konfiguracja dzierżawy, licencji i rozliczeń, budowa w Power Platform, testy zachowania agenta (wykryty zapis bez potwierdzenia), weryfikacja wierszy w Dataverse, nagranie |
 
-Przykład korekty w trakcie pracy: pierwsza wersja generatora dawała pojedynczym klientom
-blisko 200 zamówień; rozkład skłonności do zakupów został przycięty (maks. ok. 45 zamówień
-w 2 lata). Test relacji w dbt wykrył też zwroty powiązane z odrzuconymi pozycjami, co
-zostało udokumentowane jako ostrzeżenie zamiast ukryte.
+### Co wyszło przy weryfikacji
+
+| Problem | Jak wyszedł | Co zmieniono |
+|---|---|---|
+| Ta sama marża (44,8%) dla każdej kategorii produktów | macierz w Power BI pokazywała identyczne wartości we wszystkich wierszach; filtr kategorii nie docierał do miar liczonych z nagłówków zamówień | pozycje zamówień połączone z nagłówkiem, miary sprzedażowe liczone z pozycji; marża od 33,8% (Elektronika) do 58,1% (Moda) |
+| Dynamika r/r +62% | porównanie z wynikiem z hurtowni; przy pełnym zakresie dat Power BI porównywał 24 miesiące z 12 | nowa miara liczona tylko na porównywalnych okresach: +35,0% |
+| Liczba dni z anomalią o 1 wyższa niż wartość kontrolna (17 zamiast 16) | zauważone przy porównaniu karty w Power BI z wartościami z hurtowni | przyczyną było 20 zamówień z wadliwymi pozycjami: jeden dzień przeszedł przez próg (z = −3,01 zamiast −2,99); wniosek o wrażliwości sztywnego progu trafił do raportu |
+| Wyniki na stronie anomalii ok. 60% za niskie | szczyt Black Friday 2025 na wykresie ok. 110 zamówień, w hurtowni 264 | zaznaczone pozycje fragmentatora ukryte poza widocznym obszarem listy; filtr usunięty |
+| Fałszywe anomalie na początku danych | dni z października 2024 oznaczone jako spadki | miara z-score liczona dopiero przy pełnych 28 dniach historii |
+| Pusty komentarz asystenta przy dużych wynikach | test pytania zwracającego 126 wierszy | model zużywał limit odpowiedzi na fazę rozumowania; podniesione limity i log ostrzeżeń |
+| Pojedynczy klienci z blisko 200 zamówieniami | kontrola rozkładów po pierwszym wygenerowaniu danych | przycięty rozkład skłonności do zakupów (maks. ok. 45 zamówień w 2 lata) |
+| Zwroty powiązane z odrzuconymi pozycjami zamówień | test relacji w dbt | udokumentowane jako ostrzeżenie i w raporcie jakości danych zamiast ukrycia |
 
 ## Plan rozwoju
 
