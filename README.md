@@ -1,6 +1,6 @@
 # E-commerce Analytics Stack
 
-**Strona projektu: https://lumijo.pl** · asystent AI: https://lumijo.pl/asystent/ · [raport Power BI](https://app.powerbi.com/view?r=eyJrIjoiNzMwYTVjZjgtOTI4Yy00NmVmLTgwZDctNDc5NzI4MGM1MmZmIiwidCI6IjQ4YzI0NGNmLTU3NjUtNGE1YS1iM2RmLWJlN2Q2NjRlNGNmOCJ9)
+**Strona projektu: https://lumijo.pl** · asystent AI: https://lumijo.pl/asystent/ · [raport Power BI](https://app.powerbi.com/view?r=eyJrIjoiNzMwYTVjZjgtOTI4Yy00NmVmLTgwZDctNDc5NzI4MGM1MmZmIiwidCI6IjQ4YzI0NGNmLTU3NjUtNGE1YS1iM2RmLWJlN2Q2NjRlNGNmOCJ9) · [agent Copilot Studio (film)](https://youtu.be/fr-TKNVn5lo)
 
 [![dbt CI](https://github.com/Lukas-Mic/ecommerce-analytics/actions/workflows/dbt-ci.yml/badge.svg)](https://github.com/Lukas-Mic/ecommerce-analytics/actions/workflows/dbt-ci.yml)
 
@@ -140,6 +140,16 @@ limit pytań na IP i na dobę. Pytania i wygenerowany SQL trafiają do logu `que
 **Koszt:** jedno pytanie to ok. 6-8 tys. tokenów; przy domyślnym limicie 100 pytań na dobę
 koszt jest ograniczony z góry. Klucz API ustawiasz w `.env` (`ANTHROPIC_API_KEY`).
 
+## Agent Copilot Studio i Power Automate
+
+Osobny moduł w ekosystemie Microsoft: Q&A tracker zespołu due diligence w **Dataverse**,
+codzienny raport otwartych pytań z **Power Automate** i agent w **Copilot Studio**, który
+sprawdza statusy pytań, dodaje nowe dopiero po potwierdzeniu użytkownika i wyjaśnia pojęcia
+na podstawie ściągawki. Film (80 s): https://youtu.be/fr-TKNVn5lo
+
+Opis, konfiguracja agenta, koszty i lista problemów napotkanych w trakcie budowy:
+[`power-platform/`](power-platform/README.md).
+
 ## Podłączenie narzędzi BI
 
 We wszystkich narzędziach używaj użytkownika **`bi_reader`**: widzi tylko schemat `marts`
@@ -165,6 +175,7 @@ i nie może niczego zmienić.
 | Generator danych | kod generatora, rozkłady, scenariusze incydentów | *(uzupełnij)* |
 | Modele dbt | SQL warstw staging/marts, testy, dokumentacja | *(uzupełnij)* |
 | Weryfikacja | budowa modeli na Postgres 16, kontrola KPI pod kątem realizmu | *(uzupełnij)* |
+| Agent Copilot Studio | projekt tabeli, przepływu i agenta, instrukcje krok po kroku, diagnoza błędów ze zrzutów ekranu | konfiguracja dzierżawy, licencji i rozliczeń, budowa w Power Platform, testy zachowania agenta (wykryty zapis bez potwierdzenia), weryfikacja wierszy w Dataverse, nagranie |
 
 Przykład korekty w trakcie pracy: pierwsza wersja generatora dawała pojedynczym klientom
 blisko 200 zamówień; rozkład skłonności do zakupów został przycięty (maks. ok. 45 zamówień
@@ -179,6 +190,7 @@ zostało udokumentowane jako ostrzeżenie zamiast ukryte.
 - [ ] Raport w Excelu odświeżany przez Power Query
 - [x] Asystent AI: pytania po polsku → SQL → wykres (z podglądem zapytania)
 - [ ] Automatyczny tygodniowy komentarz do wyników i wykrywanie anomalii
+- [x] Agent Copilot Studio z narzędziami Dataverse i raport z Power Automate
 - [x] CI z `dbt build` w GitHub Actions
 - [ ] Harmonogram odświeżania (cron)
 - [ ] Strona portfolio z opisem projektu
@@ -202,6 +214,7 @@ zostało udokumentowane jako ostrzeżenie zamiast ukryte.
 ├── tools/Dockerfile             # obraz z dbt i generatorem
 ├── assistant/                   # asystent AI (Starlette + Claude API) z testami
 ├── powerbi/                     # miary DAX (TMDL), motyw, projekt stron raportu
+├── power-platform/              # Q&A tracker: Dataverse, Power Automate, agent Copilot Studio
 ├── caddy/Caddyfile              # HTTPS dla Metabase i asystenta (opcjonalnie)
 ├── docker-compose.yml
 └── Makefile
