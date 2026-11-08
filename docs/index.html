@@ -3,31 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#0f1a17">
 <title>Hurtownia e-commerce z asystentem AI | Łukasz Micherda</title>
 <meta name="description" content="Projekt portfolio analityka danych: hurtownia PostgreSQL z dbt, raport Power BI i asystent AI odpowiadający na pytania po polsku.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Schibsted+Grotesk:ital,wght@0,400;0,500;0,700;0,800;1,400&display=swap" rel="stylesheet">
 <style>
+  /* Stały ciemny motyw: strona wygląda tak samo niezależnie od ustawień systemu i przeglądarki */
   :root {
-    color-scheme: light;
-    --paper: #f2f5f3;
-    --sheet: #fbfcfb;
-    --ink: #14302a;
-    --ink-2: #4e6560;
-    --rule: #c9d6d0;
-    --link: #1f63b8;
-    --drop: #c2362f;
-    --keep: #2a78d6;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --paper: #0f1a17; --sheet: #15231f; --ink: #e4ece8; --ink-2: #9fb3ad;
-      --rule: #2b3d38; --link: #6fa8ee; --drop: #ee7a72; --keep: #5a9be8;
-    }
-  }
-  :root[data-theme="dark"] {
     color-scheme: dark;
     --paper: #0f1a17; --sheet: #15231f; --ink: #e4ece8; --ink-2: #9fb3ad;
     --rule: #2b3d38; --link: #6fa8ee; --drop: #ee7a72; --keep: #5a9be8;
@@ -48,7 +33,11 @@
   /* ---------- nagłówek ---------- */
   .top { display: flex; justify-content: space-between; align-items: baseline; gap: 16px;
          padding: 28px 0 0; color: var(--ink-2); font-size: 15px; }
-  .top a { color: inherit; }
+  .top a { color: var(--link); font-weight: 500; }
+  .quick { display: flex; flex-wrap: wrap; gap: 10px; margin: 28px 0 0; padding: 0; list-style: none; }
+  .quick a { display: inline-block; padding: 8px 14px; border: 1px solid var(--rule); border-radius: 6px;
+             color: var(--ink); text-decoration: none; font-size: 15px; font-weight: 500; background: var(--sheet); }
+  .quick a:hover, .quick a:focus-visible { border-color: var(--link); color: var(--link); }
 
   .hero { padding: 72px 0 40px; }
   .hero h1 {
@@ -111,6 +100,7 @@
   .report-frame { position: relative; width: 100%; aspect-ratio: 16 / 9.6; border: 1px solid var(--rule);
                   border-radius: 6px; overflow: hidden; background: var(--sheet); }
   .report-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  .frame-note { margin: 0 0 10px; color: var(--ink-2); font-size: 15px; }
   @media (max-width: 560px) { .report-frame { aspect-ratio: 3 / 4; } }
   .video-frame { position: relative; width: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--rule);
                  border-radius: 6px; overflow: hidden; background: #141416; }
@@ -168,6 +158,13 @@
     <p class="prose">Hurtownia danych fikcyjnego polskiego sklepu internetowego, od surowego eksportu
       po raport w Power BI i <strong>asystenta, który odpowiada na pytania po polsku</strong>.
       Zbudowana razem z AI, a każda liczba jest sprawdzona testami.</p>
+
+    <ul class="quick" aria-label="Najważniejsze części projektu">
+      <li><a href="#raport">Raport Power BI</a></li>
+      <li><a href="/asystent/">Asystent AI na żywo</a></li>
+      <li><a href="#agent">Film: agent Copilot Studio</a></li>
+      <li><a href="https://github.com/Lukas-Mic/ecommerce-analytics">Kod na GitHubie</a></li>
+    </ul>
 
     <ol class="flow" aria-label="Liczba zamówień na kolejnych etapach hurtowni">
       <li>
@@ -284,6 +281,8 @@
     <p class="lede prose">Dwie strony: przegląd sprzedaży oraz jakość danych i anomalie. Raport jest interaktywny,
        więc fragmentatory, filtry i podpowiedzi działają. Wnioski pod wykresami powstały razem z Claude,
        a każda liczba jest sprawdzona zapytaniem w hurtowni.</p>
+    <p class="frame-note">Pusty obszar zamiast raportu? Sieć firmowa może blokować osadzanie usług Microsoft:
+       <a href="https://app.powerbi.com/view?r=eyJrIjoiNzMwYTVjZjgtOTI4Yy00NmVmLTgwZDctNDc5NzI4MGM1MmZmIiwidCI6IjQ4YzI0NGNmLTU3NjUtNGE1YS1iM2RmLWJlN2Q2NjRlNGNmOCJ9">otwórz raport w nowej karcie</a>.</p>
     <div class="report-frame">
       <iframe title="Raport Power BI: przegląd sprzedaży oraz jakość danych i anomalie"
               src="https://app.powerbi.com/view?r=eyJrIjoiNzMwYTVjZjgtOTI4Yy00NmVmLTgwZDctNDc5NzI4MGM1MmZmIiwidCI6IjQ4YzI0NGNmLTU3NjUtNGE1YS1iM2RmLWJlN2Q2NjRlNGNmOCJ9" loading="lazy" allowfullscreen></iframe>
@@ -324,6 +323,7 @@
     <p class="lede prose">W projekcie due diligence zespół prowadzi listę pytań do sprzedającego, zwykle w Excelu
        aktualizowanym ręcznie. Tutaj lista jest tabelą w Dataverse. Power Automate codziennie rano wysyła
        pytania bez odpowiedzi od ponad 3 dni, a agent odpowiada na pytania o ich status.</p>
+    <p class="frame-note">Film się nie wyświetla? <a href="https://youtu.be/fr-TKNVn5lo">Otwórz go na YouTube</a>.</p>
     <div class="video-frame">
       <iframe title="Film: agent Copilot Studio i Q&amp;A tracker w działaniu"
               src="https://www.youtube-nocookie.com/embed/fr-TKNVn5lo?rel=0" loading="lazy"

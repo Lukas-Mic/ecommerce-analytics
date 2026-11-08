@@ -3,22 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
 <title>Asystent hurtowni danych</title>
 <meta name="description" content="Zadaj pytanie po polsku - Claude napisze SQL, hurtownia go wykona, a Ty zobaczysz wynik, wykres i zapytanie.">
 <style>
+  /* Stały ciemny motyw, spójny ze stroną projektu */
   :root {
-    color-scheme: light;
-    --page: #f4f4f1; --surface: #ffffff; --ink: #0b0b0b; --ink-2: #52514e; --muted: #898781;
-    --hair: #e1e0d9; --accent: #2a78d6; --accent-ink: #ffffff; --code: #f6f6f3; --err: #d03b3b;
-    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      color-scheme: dark;
-      --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
-      --hair: #2c2c2a; --accent: #3987e5; --code: #232322; --err: #e66767;
-      --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
-    }
+    color-scheme: dark;
+    --page: #0d0d0d; --surface: #1a1a19; --ink: #f0efec; --ink-2: #c3c2b7; --muted: #898781;
+    --hair: #2c2c2a; --accent: #3987e5; --accent-ink: #ffffff; --code: #232322; --err: #e66767;
+    --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
   }
   * { box-sizing: border-box; }
   body { margin: 0; background: var(--page); color: var(--ink);
